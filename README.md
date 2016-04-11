@@ -29,4 +29,4 @@ To create a new branch, open up the 'Shell' from the 'Tools' menu. Enter `git ch
 
 I'll worry about intergrating all changes into the master branch (i.e., dealing with the pull requests) to make sure nothing breaks.
 
-THAT'S IT!
+**THAT'S IT!**
