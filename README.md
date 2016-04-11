@@ -1,7 +1,9 @@
 # pwatch
 PenguinWatch camera processing/modeling
 
-To make changes to scripts, check out a branch from the master, modify the code, then submit pull request.
+To modify, checkout a branch from the master. Do not work on the master branch.
+
+Also, DO NOT COMMIT files greater than 100MB in size. These will need to be added through git lfs.
 
 # Notes about project workflow
 1) First clone the repository onto your local machine
