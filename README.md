@@ -10,7 +10,7 @@ PenguinWatch camera processing/modeling.
 - Be sure you DO NOT commit files larger than 100MB. This will break the repository. We can set up git lfs if this need to be done.
 
 
-Stil need to: 
+**Stil need to:**
 
 - Integrate chick and eggs into this. I didn't have this data
 
