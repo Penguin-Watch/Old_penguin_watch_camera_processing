@@ -3,7 +3,7 @@ PenguinWatch camera processing/modeling
 
 To make changes to scripts, check out a branch from the master, modify the code, then submit pull request.
 
-NOTE: DO NOT commit any files larger than 100MB without first adding to git lfs
+NOTE: DO NOT commit any files larger than 100MB without first adding to git lfs (and then nothing over 1GB)
 
 TERMINAL:
 
