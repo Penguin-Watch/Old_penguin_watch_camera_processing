@@ -12,14 +12,14 @@ PenguinWatch camera processing/modeling.
 
 **Stil need to:**
 
-- Integrate chick and eggs into this. I didn't have this data
+- Integrate chick and eggs into this. I didn't have these data.
 
 - Test this on sites other than NEKOc. Some tweaking might be required. 
 
 
 
 # Notes about project workflow
-1) First clone the repository onto your local machine (this will only need to be done once)
+1) First clone the repository onto your local machine (this will only need to be done once).
 
 
 2) Whenever you want to make changes to the code, you should 'checkout a branch'. By this I mean create a new branch off of the master. 
