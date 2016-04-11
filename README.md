@@ -3,18 +3,20 @@ PenguinWatch camera processing/modeling
 
 To make changes to scripts, check out a branch from the master, modify the code, then submit pull request.
 
-NOTE: DO NOT commit any files larger than 100MB without first adding to git lfs (and then nothing over 1GB)
+# Getting started with the git workflow
+1) First clone the repository onto your local machine
 
-TERMINAL:
+2) Whenever you want to make changes to the code, you should 'checkout a branch'. By this I mean create a new branch off of the master. Please to do not work on the master branch.
 
-`git lfs install`
+To create a new branch, open up the 'Shell' from the 'Tools' menu. Enter `git checkout -b BRANCH_NAME_HERE` into the command line. This will create a new branch and then switch to this branch. Make sure you see your branch name in the drop down menu in the git window of Rstudio.
 
-`git lfs track 'files'`
+3) Now you can change code, add files etc. in this new branch. Commit your changes either from the command line or with the commit button in the git window of Rstudio.
 
-`git lfs track`
+All changes made in this branch will not affect the master.
 
-`git add 'files'`
+4a) Once you're done working on the branch for the time being you might wnat to push that branch to github to come back to it at a later time. To push the branch to github go back to the shell and enter `git push origin BRANCH_NAME_HERE`.
 
-`git commit -m 'commit'`
+This branch will now be on github.
 
-`git push -u origin master`
+4b) If you're done working on the branch permanently (maybe you've fixed a bug or added a feature) and you want to integrate thosechanges into the master branch, submit a pull request.
+
