@@ -16,7 +16,7 @@ PenguinWatch camera processing/modeling.
 
 2) Whenever you want to make changes to the code, you should 'checkout a branch'. By this I mean create a new branch off of the master. 
 
-To create a new branch, open up the 'Shell' from the 'Tools' menu. Enter `git checkout -b BRANCH_NAME_HERE` into the command line. This will create a new branch and then switch to this branch. Make sure you see your branch name in the drop down menu in the 'git' window of RStudio.
+To create a new branch, open up the 'Shell' from the 'Tools' menu. Enter `git checkout -b BRANCH_NAME_HERE` into the command line. This will create a new branch and then switch to this branch. Make sure you see your branch name in the drop down menu in the 'Git' window of RStudio.
 
 
 3) Now you can change code, add files etc. in this new branch. Commit your changes either from the command line with `git add FILE_HERE` `git commit -m 'MESSAGE_HERE` or with the 'Commit' button in the git window of RStudio. All changes made in this branch will not affect the master.
