@@ -10,6 +10,14 @@ PenguinWatch camera processing/modeling.
 - Be sure you DO NOT commit files larger than 100MB. This will break the repository. We can set up git lfs if this need to be done.
 
 
+Stil need to: 
+
+- Integrate chick and eggs into this. I didn't have this data
+
+- Test this on sites other than NEKOc. Some tweaking might be required. 
+
+
+
 # Notes about project workflow
 1) First clone the repository onto your local machine (this will only need to be done once)
 
