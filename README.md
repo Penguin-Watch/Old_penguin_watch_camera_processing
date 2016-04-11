@@ -3,7 +3,7 @@ PenguinWatch camera processing/modeling
 
 To make changes to scripts, check out a branch from the master, modify the code, then submit pull request.
 
-# Getting started with the git workflow
+# Notes about project workflow
 1) First clone the repository onto your local machine
 
 2) Whenever you want to make changes to the code, you should 'checkout a branch'. By this I mean create a new branch off of the master. Please to do not work on the master branch.
