@@ -1,0 +1,26 @@
+################
+#TO DOs - Penguin Watch
+#
+#July 15, 2016
+################
+
+
+#build user interface to mask out areas of interest and click nests
+-Shiny
+-Python
+
+
+
+#test other sites and look at:
+-ortho-rectification parameter
+-density threshold parameter
+-Look at run time for k-means
+
+
+
+#Put everything into functions:
+-renaming and things (pre-zooniverse)
+-creating nest time series (post-zooniverse)
+
+
+Link nest numbers from foraging and phenology cameras
