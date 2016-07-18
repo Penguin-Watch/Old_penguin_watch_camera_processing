@@ -18,9 +18,6 @@
 #Author: Casey Youngflesh
 ##################
 
-#line of comments
-
-#another line of comments
 
 # Load packages -----------------------------------------------------------
 
