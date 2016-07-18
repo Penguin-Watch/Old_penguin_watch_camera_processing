@@ -1,7 +1,7 @@
 # pwatch
 PenguinWatch camera processing/modeling.
 
-**To avoid code conflicts:**
+**General info:**
 
 - To modify, checkout a branch from the master. Please do not work on the master branch.
 
@@ -9,13 +9,7 @@ PenguinWatch camera processing/modeling.
 
 - Be sure you DO NOT commit files larger than 100MB. This will break the repository. We can set up git lfs if this needs to be done. Add large files (or folders that contain large files) to the '.gitignore' file to avoid adding these large files to the repository.
 
-
-**Stil need to:**
-
-- Integrate chick and eggs into this. I didn't have these data.
-
-- Test this on sites other than NEKOc. Some tweaking might be required. 
-
+- Although 'Data' (click data) and 'Images' (camera images) folders are not tracked by git, these folders should exist in your Rstudio project directory
 
 
 # Notes about project workflow
