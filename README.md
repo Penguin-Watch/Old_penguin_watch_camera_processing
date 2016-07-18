@@ -7,7 +7,7 @@ PenguinWatch camera processing/modeling.
 
 - Push all commits to GitHub after each session and be sure to pull from GitHub before beginning each session.
 
-- Be sure you DO NOT commit files larger than 100MB. This will break the repository. We can set up git lfs if this needs to be done.
+- Be sure you DO NOT commit files larger than 100MB. This will break the repository. We can set up git lfs if this needs to be done. Add large files (or folders that contain large files) to the '.gitignore' file to avoid adding these large files to the repository.
 
 
 **Stil need to:**
