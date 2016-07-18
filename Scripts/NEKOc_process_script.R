@@ -22,6 +22,8 @@
 
 #add another test line
 
+#add a third test line
+
 # Load packages -----------------------------------------------------------
 
 #installs packages if need and loads required packages
