@@ -30,7 +30,7 @@ To create a new branch, open up the 'Shell' from the 'Tools' menu. Enter `git ch
 3) Now you can change code, add files etc. in this new branch. Commit your changes either from the command line with `git add FILE_HERE` `git commit -m 'MESSAGE_HERE` or with the 'Commit' button in the git window of RStudio. All changes made in this branch will not affect the master.
 
 
-4) Once you are done working on the branch push that branch to GitHub. You can come back to it at a later time. To push the branch to GitHub go back to the shell and enter `git push origin BRANCH_NAME_HERE`. This branch will now be on GitHub.
+4) Once you are done working on the branch push that branch to GitHub. You can come back to it at a later time. To push the branch to GitHub go back to the shell and enter `git push -u origin BRANCH_NAME_HERE`. This branch will now be on GitHub.
 
 
 5) If you're done working on the branch permanently (maybe you've fixed a bug or added a feature) and you want to integrate those changes into the master branch, submit a 'pull request'. Go to the pwatch GitHub site, find your branch, and click 'pull request'. Make a note about the changes you've made.
