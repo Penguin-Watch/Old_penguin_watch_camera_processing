@@ -36,3 +36,10 @@ Bio-loging
 -used zooniverse crowdsourcing to get people to annotate
 -how do we id **features of interest** (i.e., nest time series for survival) over time
 -extracting parameters from this using mark recapture models
+
+
+
+
+Data:
+-consensus clicks for all cameras
+-images for sites...might be large
