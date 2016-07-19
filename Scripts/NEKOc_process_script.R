@@ -333,7 +333,9 @@ plot(HD_clicks[,1], HD_clicks[,2], pch='.')
 #...sure cluster centers are determined correctly. 2million seems alright here
 #It will be easy to run this on AWS or the supercoputer here at SBU
 
-#for benchmarking - run between lines 323-344
+#for benchmarking - run between #~~~~~~~~~~~~#
+
+#~~~~~~~~~~~~#
 ptm <- proc.time()
 
 #run in parallel with 2 cores
@@ -356,6 +358,8 @@ nests <- res[[which.min(temp.vec)]]
 #nests <- kmeans(out, 26, nstart= 2000000, iter.max = 1000000000, algorithm = 'Hartigan-Wong')
 
 proc.time() - ptm
+#~~~~~~~~~~~~#
+
 
 #-----------#
 #benchmark results for MBP
@@ -440,7 +444,7 @@ for (i in 1:length(polys))
 #-----------------------------------------#
 
 
-#determin which points are in which polygons
+#determine which points are in which polygons
 out <- c()
 for (j in 1:length(polys))
 {
