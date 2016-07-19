@@ -27,8 +27,11 @@ To create a new branch, open up the 'Shell' from the 'Tools' menu. Enter `git ch
 4) Once you are done working on the branch push that branch to GitHub. You can come back to it at a later time. To push the branch to GitHub go back to the shell and enter `git push -u origin BRANCH_NAME_HERE`. This branch will now be on GitHub. NOTE: the 'Push' button in RStudio can be used to push commits to GitHub, but only after the **initial** push is made through the shell.
 
 
-5) If you're done working on the branch permanently (maybe you've fixed a bug or added a feature) and you want to integrate those changes into the master branch, submit a 'pull request'. Go to the pwatch GitHub site, find your branch, and click 'pull request'. Make a note about the changes you've made.
+5) To integrate any changes from the master branch into a development branch, you can use the 'Pull' button in RStudio while on the development branch. Alternatively use: `git checkout BRANCH_NAME_HERE` (switches to development branch), `git fetch origin` (grabs new material from repo), `git merge origin/master` (merges changes from master branch into development branch). This alternative method allows you to look at what will be integrated into the development branch from the master branch between the `fetch` and `merge` steps by looking at changes made to the master branch since the last merge.
 
-I'll worry about intergrating all changes into the master branch (i.e., dealing with the pull requests) to make sure nothing breaks.
+
+6) If you're done working on the branch permanently (maybe you've fixed a bug or added a feature) and you want to integrate those changes into the master branch, submit a 'pull request'. Go to the pwatch GitHub site, find your branch, and click 'pull request'. Make a note about the changes you've made.
+
+Once a pull request is made leave your thoughts on the proposed changes. I'll worry about merging the changes into the master branch to make sure nothing breaks.
 
 **THAT'S IT!**
