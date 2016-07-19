@@ -8,3 +8,9 @@
 #create time series
 
 #master function to feed in consensus clicks and number of nests --> outputs time series
+
+
+ls()
+
+
+sdsdgsdfgsgd
