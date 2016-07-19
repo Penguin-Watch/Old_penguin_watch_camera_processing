@@ -19,6 +19,11 @@
 ##################
 
 
+#change so that only points in high density areas are shown and then overlaid on plot
+#develop tool so that user can then click on nests to specify location with high click density overlaid
+#nest locations will be used to create tesselation and create time series for nests
+
+
 # Load packages -----------------------------------------------------------
 
 #installs packages if need and loads required packages
