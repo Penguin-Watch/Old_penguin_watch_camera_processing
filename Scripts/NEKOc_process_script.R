@@ -128,7 +128,7 @@ gg_color_hue <- function(n, OUT = 'HEX')
   }
   if (OUT != 'HEX' & OUT != 'RGB')
   {
-    stop('"OUT" argument must be with "HEX" or "RGB"')
+    stop('"OUT" argument must be "HEX" or "RGB"')
   }
 }
 
@@ -167,7 +167,7 @@ colnames(NEKO_con_data) <- c('ID', 'ZOOID', 'path', 'x', 'y')
 
 #sc <- 2048/1536 #image dimensions
 #1000 - range of x clicks
-#1000/sc - y range must be 750 
+#1000/sc - y range must be 750
 
 #remove erroneous clicks outside of defined region (not likely any with consensus data)
 to_rm <- which(NEKO_con_data$x > 1000 | NEKO_con_data$x < 0 | NEKO_con_data$y < 0 | NEKO_con_data$y > 750)
