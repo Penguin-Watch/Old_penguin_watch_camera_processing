@@ -21,8 +21,6 @@
 
 # Load packages -----------------------------------------------------------
 
-#master test insert
-
 #installs packages if need and loads required packages
 
 if('pacman' %in% rownames(installed.packages()) == FALSE)
