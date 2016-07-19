@@ -9,7 +9,8 @@
 -Shiny
 -Python
 
-
+#nearest neighbor distance for points to get settlement
+-points that have low nearest neighbor distance could also be used for density thresholding for nest detection
 
 #test other sites and look at:
 -ortho-rectification parameter
@@ -24,3 +25,14 @@
 
 
 Link nest numbers from foraging and phenology cameras
+
+
+
+Bio-loging
+-trying to id nests in one image and id nests across images
+-turn into something biologically meaningful
+-people have done this manually - visits to colony, cameras but annotated manually
+
+-used zooniverse crowdsourcing to get people to annotate
+-how do we id **features of interest** (i.e., nest time series for survival) over time
+-extracting parameters from this using mark recapture models

@@ -41,7 +41,7 @@ dev.off()
 
 # Set WD ------------------------------------------------------------------
 
-osx <- '/Users/caseyyoungflesh/Google Drive/R/Camera trap - mark recapture/'
+osx <- '/Users/caseyyoungflesh/Google Drive/R/pwatch/'
 win <- 'C:/Users/Lynch Lab 7/Google Drive/R/Camera trap - mark recapture/'
 
 if(Sys.info()[['sysname']] == 'Windows')
@@ -171,6 +171,7 @@ colnames(NEKO_con_data) <- c('ID', 'ZOOID', 'path', 'x', 'y')
 
 #remove erroneous clicks outside of defined region (not likely any with consensus data)
 to_rm <- which(NEKO_con_data$x > 1000 | NEKO_con_data$x < 0 | NEKO_con_data$y < 0 | NEKO_con_data$y > 750)
+#determine which image these erroneous points are associated with
 
 #transform image
 if(length(to_rm) > 0)
@@ -222,9 +223,16 @@ back_trans <- function(input)
 #----------------------------------------------#
 
 
+#NEKO data merged with transformed x and transformed y
+tNEKO_con_data <- data.frame(NEKO_con_data, xtr= x_val, ytr= y_val)
+
+#unique images that we have consensus data for
+unique_images <- unique(tNEKO_con_data$path)
 
 #Plots of normal vs transformed clicks to see effect of transformation
 #first plot camera image
+
+#unique images needs to be defined first
 setwd(paste0(dir, 'Images/NEKOc'))
 i <- 23
 img_to_plot <- paste0(substr(unique_images[i], 7,27), '.JPG')
@@ -238,15 +246,12 @@ points(tp[,1], tp[,2], pch='.', col=rgb(.3,.8,.3, alpha=.3))
 #plot all consensus clicks for NEKOc_2013 orthorectified
 plot(x_val, y_val, pch='.')
 
-#NEKO data merged with transformed x and transformed y
-tNEKO_con_data <- data.frame(NEKO_con_data, xtr= x_val, ytr= y_val)
 
 
 
 # Click Density -----------------------------------------------------------
 
-#unique images that we have consensus data for
-unique_images <- unique(tNEKO_con_data$path)
+
 
 #just 380 of images - about when creche happens 
 #this was determined here manually but can be automated with chick clicks
@@ -322,11 +327,12 @@ for (k in 1:n_poly)
 
 #plot filtered points (only points in areas where scaled density is > 0.25)
 plot(HD_clicks[,1], HD_clicks[,2], pch='.')
-
+#reverse ortho and lay over image - then have humans click on image to define nests
 
 
 # K-means -----------------------------------------------------------------
 
+#possibly remove
 #Number of nests has to be fed into code - don't think there is a way around this
 #There are 26 nests in this image - determined manually
 #This is the time limiting step. Many starting points must be run to make
