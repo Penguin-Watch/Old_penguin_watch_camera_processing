@@ -18,7 +18,15 @@
 #Author: Casey Youngflesh
 ##################
 
+#turn into function with 3 inputs (obliqueness, density threshold, # nests)
 
+#methods script:
+#as before
+#remove all extraneous functions/plotting
+#set up so that points that have been density thresholded are transformed to non-ortho to 
+#...overlay on image for human nest detection
+
+#long term script:
 #change so that only points in high density areas are shown and then overlaid on plot
 #develop tool so that user can then click on nests to specify location with high click density overlaid
 #nest locations will be used to create tesselation and create time series for nests

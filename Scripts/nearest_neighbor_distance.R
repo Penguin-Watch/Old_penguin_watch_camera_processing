@@ -1,3 +1,8 @@
+#take zooniverse consensus data
+#grep one site at a time
+#calculate NND
+#use that period of time in the methods_script
+
 
 rm(list=ls())
 ls()
