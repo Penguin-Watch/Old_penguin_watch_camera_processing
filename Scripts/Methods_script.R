@@ -76,53 +76,6 @@ if(Sys.info()[['sysname']] == 'Darwin')
 
 # Define functions --------------------------------------------------------
 
-#to plot camera images
-#2048 x 1536
-plot_jpeg = function(path, add=FALSE)
-{
-  par(mar=  c(0,0,0,0))
-  jpg = readJPEG(path, native=T) # read the file
-  res = dim(jpg)[1:2] # get the resolution
-  if (!add) # initialize an empty plot area if add==FALSE
-    plot(1,1,xlim=c(1,res[2]),ylim=c(1,res[1]),asp=1,type='n',xaxs='i',yaxs='i',xaxt='n',yaxt='n',xlab='',ylab='',bty='n')
-  rasterImage(jpg,1,1,res[2],res[1])
-  par(mar= c(5, 4, 4, 2))
-}
-
-#ggplot colors function
-gg_color_hue <- function(n, OUT = 'HEX')
-{
-  #n = 6
-  hues = seq(15, 375, length=n+1)
-  tmp <- hcl(h=hues, l=65, c=100)[1:n]
-  gg_cols <- col2rgb(tmp)/255
-  
-  if (OUT == 'HEX')
-  {
-    return(tmp)
-  }
-  if (OUT == 'RGB')
-  {
-    return(gg_cols)
-  }
-  if (OUT != 'HEX' & OUT != 'RGB')
-  {
-    stop('"OUT" argument must be "HEX" or "RGB"')
-  }
-}
-
-
-#function to scale points from zooniverse dimensions (1000 x 750) to camera image dimension (2048 x 1536)
-#zooniverse uses scaling factor of 2.048
-#first column must be x coords, second column y coords
-cam_trans <- function(input)
-{
-  temp_x <- input[,1] * 2.048
-  temp_y <- 1536 - (input[,2] * 2.048)
-
-  OUT <- cbind(temp_x, temp_y)
-  return(OUT)
-}
 
 
 
@@ -200,80 +153,6 @@ plot(post_ortho$x, post_ortho$y, pch='.')
 plot(NEKO_con_data$x, -NEKO_con_data$y, pch='.')
 
 
-#----------------------------------------------#
-#Function to reverse transform for orthorectified to original
-#does the reverse of above for given set of points
-
-rev_orthro_fun <- function(IN, POST_ORTHO)
-{
-  
-  #IN is df of points to be transformed - column 1 must be x, column 2 must be y
-  #POST_ORTHO output from ortho_fun -> scaled x data used to find centers and reverse ortho
-  
-  #get centers of scaled data from ortho
-  x_center <- POST_ORTHO$x_scale
-
-  #points to be transformed
-  XVAL <- IN[,1]
-  YVAL <- IN[,2]
-  
-  #ortho adjuster used in original ortho
-  OBL <- POST_ORTHO$OBL
-  
-  #quadratic equation to backsolve for y
-  ay <- 1
-  by <- OBL
-  cy <- -YVAL
-  DEL_y <- by^2 - (4*ay*cy)
-  out1_y <- (-by + sqrt(DEL_y))/(2*ay)
-  
-  #use y to solve for x
-  out1_x <- XVAL/(out1_y + OBL)
-  
-  #transform back to original coords
-  orig_y <- 750 - (YVAL/(out1_y + OBL))
-  orig_x <- (XVAL/(out1_y + OBL)) + x_center
-  
-  #out object
-  OUT <- data.frame(orig_x= orig_x, orig_y= orig_y)
-  
-  return(OUT)
-}
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#JUST PLOTTING
-#|
-#v
-
-#NEKO data merged with transformed x and transformed y
-tNEKO_con_data <- data.frame(NEKO_con_data, xtr= x_val, ytr= y_val)
-
-#unique images that we have consensus data for
-unique_images <- unique(tNEKO_con_data$path)
-
-#Plots of normal vs transformed clicks to see effect of transformation
-#first plot camera image
-
-#unique images needs to be defined first
-setwd(paste0(dir, 'Images/NEKOc'))
-i <- 23
-img_to_plot <- paste0(substr(unique_images[i], 7,27), '.JPG')
-plot_jpeg(img_to_plot)
-
-#plot all consensus clicks for NEKOc_2013
-#transform clicks to camera dimensions then plot
-tp <- cam_trans(cbind(NEKO_con_data$x, NEKO_con_data$y))
-points(tp[,1], tp[,2], pch='.', col=rgb(.3,.8,.3, alpha=.3))
-
-#plot all consensus clicks for NEKOc_2013 orthorectified
-plot(x_val, y_val, pch='.')
-
-#^
-#|
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #NOT NEEDED IF GREP AFTER NND AT BEGINNING
@@ -298,6 +177,7 @@ head(temp_image)
 #^
 #|
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
 
 
 # Click Density -----------------------------------------------------------
@@ -327,21 +207,6 @@ den_fun <- function(IN)
 }
 
 den_out <- den_fun(post_ortho)
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#JUST PLOTTING
-#|
-#v
-# Density plots -----------------------------------------------------------
-
-#contour plot
-#Takes time
-contour(den_out)
-#^
-#|
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 
 
@@ -385,31 +250,14 @@ filter_fun <- function(DEN_OUT, POST_ORTHO, D_THR = 0.25)
 filter_out <- filter_fun(den_out, post_ortho, D_THR = 0.25)
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#JUST PLOTTING
-#|
-#v
-#plot filtered points (only points in areas where scaled density is > 0.25)
-plot(filter_out[,1], filter_out[,2], pch='.')
-#reverse ortho and lay over image - then have humans click on image to define nests
-#^
-#|
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
 
 # K-means -----------------------------------------------------------------
 
-#possibly remove
-#Number of nests has to be fed into code - don't think there is a way around this
+
+#Number of nests has to be fed into code
 #There are 26 nests in this image - determined manually
 #This is the time limiting step. Many starting points must be run to make
-#...sure cluster centers are determined correctly. 2million seems alright here
-#It will be easy to run this on AWS or the supercoputer here at SBU
-
-
-
-
-#run in parallel with 2 cores
+#...sure cluster centers are determined correctly. 2million seems alright her
 
 
 km_fun <- function(FILTER_OUT, NESTS, CORES, ITERS = 2000000)
@@ -457,26 +305,6 @@ km_out <- km_fun(filter_out, NESTS = 26, CORES = 2, ITERS= 2000)
 #4 cores - CRASHED
 #-----------#
 
-
-
-# Plot and process --------------------------------------------------------
-
-#need to reverse orthorectify and transform to camera image dimensions to visualize
-#reverse orthorectification
-
-
-####fix
-btrans_pts <- rev_ortho_fun(nests$center, post_ortho)
-nest_cam_bt <- cam_trans(btrans_pts)
-
-#filtered clicks in high density area with nest centers
-plot(HD_clicks[,1], HD_clicks[,2], pch='.')
-points(nests$centers, col= gg_color_hue(26), pch= 19)
-
-#camera image with nest centers
-plot_jpeg(img_to_plot)
-#pts.fun(NEKO_con_data[,4:5]) # plots all consensus click points
-points(nest_cam_bt, col= gg_color_hue(26), pch= 19)
 
 
 
@@ -580,4 +408,195 @@ colnames(summary) <- colnames(t_series)
 #time series for each nest - see reference image for nest number
 summary
 
+
+
+
+
+
+
+
+
+#plotting
+
+
+
+#to plot camera images
+#2048 x 1536
+plot_jpeg = function(path, add=FALSE)
+{
+  par(mar=  c(0,0,0,0))
+  jpg = readJPEG(path, native=T) # read the file
+  res = dim(jpg)[1:2] # get the resolution
+  if (!add) # initialize an empty plot area if add==FALSE
+    plot(1,1,xlim=c(1,res[2]),ylim=c(1,res[1]),asp=1,type='n',xaxs='i',yaxs='i',xaxt='n',yaxt='n',xlab='',ylab='',bty='n')
+  rasterImage(jpg,1,1,res[2],res[1])
+  par(mar= c(5, 4, 4, 2))
+}
+
+#ggplot colors function
+gg_color_hue <- function(n, OUT = 'HEX')
+{
+  #n = 6
+  hues = seq(15, 375, length=n+1)
+  tmp <- hcl(h=hues, l=65, c=100)[1:n]
+  gg_cols <- col2rgb(tmp)/255
+  
+  if (OUT == 'HEX')
+  {
+    return(tmp)
+  }
+  if (OUT == 'RGB')
+  {
+    return(gg_cols)
+  }
+  if (OUT != 'HEX' & OUT != 'RGB')
+  {
+    stop('"OUT" argument must be "HEX" or "RGB"')
+  }
+}
+
+
+#function to scale points from zooniverse dimensions (1000 x 750) to camera image dimension (2048 x 1536)
+#zooniverse uses scaling factor of 2.048
+#first column must be x coords, second column y coords
+cam_trans <- function(input)
+{
+  temp_x <- input[,1] * 2.048
+  temp_y <- 1536 - (input[,2] * 2.048)
+  
+  OUT <- cbind(temp_x, temp_y)
+  return(OUT)
+}
+
+
+
+#----------------------------------------------#
+#Function to reverse transform for orthorectified to original
+#does the reverse of above for given set of points
+
+rev_orthro_fun <- function(IN, POST_ORTHO)
+{
+  
+  #IN is df of points to be transformed - column 1 must be x, column 2 must be y
+  #POST_ORTHO output from ortho_fun -> scaled x data used to find centers and reverse ortho
+  
+  #get centers of scaled data from ortho
+  x_center <- POST_ORTHO$x_scale
+  
+  #points to be transformed
+  XVAL <- IN[,1]
+  YVAL <- IN[,2]
+  
+  #ortho adjuster used in original ortho
+  OBL <- POST_ORTHO$OBL
+  
+  #quadratic equation to backsolve for y
+  ay <- 1
+  by <- OBL
+  cy <- -YVAL
+  DEL_y <- by^2 - (4*ay*cy)
+  out1_y <- (-by + sqrt(DEL_y))/(2*ay)
+  
+  #use y to solve for x
+  out1_x <- XVAL/(out1_y + OBL)
+  
+  #transform back to original coords
+  orig_y <- 750 - (YVAL/(out1_y + OBL))
+  orig_x <- (XVAL/(out1_y + OBL)) + x_center
+  
+  #out object
+  OUT <- data.frame(orig_x= orig_x, orig_y= orig_y)
+  
+  return(OUT)
+
+}
+
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#JUST PLOTTING
+#|
+#v
+
+#NEKO data merged with transformed x and transformed y
+tNEKO_con_data <- data.frame(NEKO_con_data, xtr= x_val, ytr= y_val)
+
+#unique images that we have consensus data for
+unique_images <- unique(tNEKO_con_data$path)
+
+#Plots of normal vs transformed clicks to see effect of transformation
+#first plot camera image
+
+#unique images needs to be defined first
+setwd(paste0(dir, 'Images/NEKOc'))
+i <- 23
+img_to_plot <- paste0(substr(unique_images[i], 7,27), '.JPG')
+plot_jpeg(img_to_plot)
+
+#plot all consensus clicks for NEKOc_2013
+#transform clicks to camera dimensions then plot
+tp <- cam_trans(cbind(NEKO_con_data$x, NEKO_con_data$y))
+points(tp[,1], tp[,2], pch='.', col=rgb(.3,.8,.3, alpha=.3))
+
+#plot all consensus clicks for NEKOc_2013 orthorectified
+plot(x_val, y_val, pch='.')
+
+#^
+#|
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#JUST PLOTTING
+#|
+#v
+# Density plots -----------------------------------------------------------
+
+#contour plot
+#Takes time
+contour(den_out)
+#^
+#|
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#JUST PLOTTING
+#|
+#v
+#plot filtered points (only points in areas where scaled density is > 0.25)
+plot(filter_out[,1], filter_out[,2], pch='.')
+#reverse ortho and lay over image - then have humans click on image to define nests
+#^
+#|
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#JUST PLOTTING
+#|
+#v
+# Plot and process --------------------------------------------------------
+
+#need to reverse orthorectify and transform to camera image dimensions to visualize
+#reverse orthorectification
+
+####fix
+btrans_pts <- rev_ortho_fun(km_out$center, post_ortho)
+nest_cam_bt <- cam_trans(btrans_pts)
+
+#filtered clicks in high density area with nest centers
+plot(filter_out[,1], filter_out[,2], pch='.')
+points(km_out$centers, col= gg_color_hue(26), pch= 19)
+
+#camera image with nest centers
+plot_jpeg(img_to_plot)
+#pts.fun(NEKO_con_data[,4:5]) # plots all consensus click points
+points(nest_cam_bt, col= gg_color_hue(26), pch= 19)
+#^
+#|
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
