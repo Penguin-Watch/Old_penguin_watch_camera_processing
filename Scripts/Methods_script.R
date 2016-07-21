@@ -1,14 +1,17 @@
 ##################
-#Example script for NEKOc 2013
+#Penguin Watch nest time series creator
 #
-#
-#Code can be generalized into package
 #
 #Script uses consensus zooniverse clicks
 #-Defines nests based on density thresholds
 #-Creates time series for each nest
 #
 ##################
+
+#feed in master data
+#clean up code and issues
+#make nice plots
+
 
 
 #post-zooniverse:
@@ -23,8 +26,6 @@
 #9) run tesselation on nests specified in Step 7
 #10) create time series for each nest using consensus data
 
-
-#turn into function with 3 inputs (obliqueness, density threshold, # nests)
 
 #methods script:
 #as before
@@ -78,14 +79,14 @@ if(Sys.info()[['sysname']] == 'Darwin')
 
 
 #TOP FUNCTION 
-#function(DATA_IN, SITE, DEN, OBL)
+#function(DATA_IN, SITE, DEN, OBL, NESTS)
 #DATA_IN is zoo consensus
 #SITE is site to grep
 #DEN is density threshold
 #OBL is obliqueness of camera (how much to ortho)
 
 #grep -> NND -> grep -> ortho_fun -> den_fun -> filter_fun -> km_fun ->
-#... rev_ortho_fun -> order_fun -> poly_fun -> 
+#... rev_ortho_fun -> order_fun -> poly_fun -> point_fun -> ts_fun
 
 
 # Load/process data -------------------------------------------------------
@@ -136,6 +137,8 @@ ptm <- proc.time()
 pre_ortho_out <- pre_ortho_fun(NEKO_con_data)
 proc.time() - ptm
 
+
+
 # Orthorectification ------------------------------------------------------
 
 #due to oblique angle of camera, image needs to be altered to correctly determine click density
@@ -176,9 +179,8 @@ ptm <- proc.time()
 post_ortho <- ortho_fun(NEKO_con_data, 150)
 proc.time() - ptm
 
-plot(post_ortho$x, post_ortho$y, pch='.')
-
-plot(NEKO_con_data$x, -NEKO_con_data$y, pch='.')
+#plot(post_ortho$x, post_ortho$y, pch='.')
+#plot(NEKO_con_data$x, -NEKO_con_data$y, pch='.')
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -206,6 +208,9 @@ for (i in 1:length(series))
 #|
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
+
+#need to ortho for just period of interest and then (whicih would be done
+#earlier in NND function)
 
 
 # Click Density -----------------------------------------------------------
@@ -280,6 +285,8 @@ filter_out <- filter_fun(den_out, post_ortho, D_THR = 0.25)
 proc.time() - ptm
 
 
+
+
 # K-means -----------------------------------------------------------------
 
 
@@ -334,11 +341,11 @@ proc.time() - ptm
 
 
 
+
+
 # reverse ortho on nest centers -------------------------------------------
 
-#----------------------------------------------#
 #Function to reverse transform for orthorectified to original
-#does the reverse of above for given set of points
 
 rev_ortho_fun <- function(KM_OUT, POST_ORTHO)
 {
@@ -382,6 +389,9 @@ km_rev_ortho <- rev_ortho_fun(km_out, post_ortho)
 proc.time() - ptm
 
 
+
+
+
 # Data for time series creation --------------------------------------------
 
 
@@ -389,6 +399,7 @@ proc.time() - ptm
 #chronological order - likely needs to be updated using metadata
 
 
+#should filter bad data at this step as it's fed into next function
 order_fun <- function(PRE_NND)
 {
   
@@ -411,6 +422,8 @@ order_fun <- function(PRE_NND)
 ptm <- proc.time()
 order_out <- order_fun(NEKO_con_data)
 proc.time() - ptm
+
+
 
 
 
@@ -447,6 +460,8 @@ poly_fun <- function(KM_REV_ORTHO)
 ptm <- proc.time()
 poly_out <- poly_fun(km_rev_ortho)
 proc.time() - ptm
+
+
 
 
 
@@ -487,36 +502,47 @@ proc.time() - ptm
 
 
 
+# Create time series ------------------------------------------------------
 
-#unique images
-u_images <- unique(point_fun_out$IMAGE)
-
-#progress bar
-pb <- txtProgressBar(min = 1, max = NROW(u_images), style = 3)
-
-#create empty matrix
-OUT <- matrix(nrow= NROW(u_images), ncol= (NCOL(t_series)-1))
-
-#summary information for each image (i.e., time step)
-for(i in 1:NROW(u_images))
+ts_fun <- function(POINT_FUN_OUT)
 {
-  #i <- 1
-  temp <- filter(t_series, IMAGE == u_images[i])
+  #POINT_FUN_OUT <- point_fun_out
   
-  #sum number of penguins in given polygon for each image
-  summed <- apply(temp[,-1], 2, sum)
+  #unique images
+  u_images <- unique(POINT_FUN_OUT$IMAGE)
+
+  #progress bar
+  pb <- txtProgressBar(min = 1, max = NROW(u_images), style = 3)
+
+  #create empty matrix
+  OUT <- matrix(nrow= NROW(u_images), ncol= (NCOL(POINT_FUN_OUT)-1))
+
+  #summary information for each image (i.e., time step)
+  for(i in 1:NROW(u_images))
+  {
+    #i <- 1
+    temp <- filter(POINT_FUN_OUT, IMAGE == u_images[i])
   
-  OUT[i,] <- summed
-  setTxtProgressBar(pb, i)
+    #sum number of penguins in given polygon for each image
+    summed <- apply(temp[,-1], 2, sum)
+  
+    OUT[i,] <- summed
+    setTxtProgressBar(pb, i)
+  }
+  close(pb)
+
+  #bind time series data with image names
+  summary <- data.frame(IMAGE= u_images, OUT)
+  colnames(summary) <- colnames(POINT_FUN_OUT)
+
+  #time series for each nest - see reference image for nest number
+  return(summary)
 }
-close(pb)
 
-#bind time series data with image names
-summary <- data.frame(IMAGE= u_images, OUT)
-colnames(summary) <- colnames(t_series)
 
-#time series for each nest - see reference image for nest number
-summary
+ptm <- proc.time()
+ts_out <- ts_fun(point_fun_out)
+proc.time() - ptm
 
 
 
@@ -526,8 +552,7 @@ summary
 
 
 
-#plotting
-
+# PLOTTING ----------------------------------------------------------------
 
 
 #to plot camera images
@@ -581,9 +606,6 @@ cam_trans <- function(input)
 
 
 
-
-
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #JUST PLOTTING
 #|
@@ -623,7 +645,7 @@ plot(x_val, y_val, pch='.')
 #JUST PLOTTING
 #|
 #v
-# Density plots -----------------------------------------------------------
+# Density plots
 
 #contour plot
 #Takes time
@@ -649,7 +671,7 @@ plot(filter_out[,1], filter_out[,2], pch='.')
 #JUST PLOTTING
 #|
 #v
-# Plot and process --------------------------------------------------------
+# Plot and process
 
 #need to reverse orthorectify and transform to camera image dimensions to visualize
 #reverse orthorectification
