@@ -165,11 +165,10 @@ ortho_fun <- function(IN, OBL)
   #IN <- NEKO_con_data
   #OBL <- 150
   
-  #remove erroneous clicks outside of defined region (not likely any with consensus data)
+  #remove erroneous clicks outside of defined region
   to_rm <- which(IN$x > 1000 | IN$x < 0 | IN$y < 0 | IN$y > 750)
-  #determine which image these erroneous points are associated with so they can be removed
 
-  #transform image
+  #remove erroneous clicks
   if(length(to_rm) > 0)
   {
     TEMP_x <- scale(IN$x[-to_rm], scale=FALSE)
@@ -179,15 +178,24 @@ ortho_fun <- function(IN, OBL)
     TEMP_y <- 750 - IN$y
   }
 
+  #transform data
   x_val <- TEMP_x * (TEMP_y + OBL)
   y_val <- TEMP_y * (TEMP_y + OBL)
   
-  OUT <- data.frame(x= x_val, y= y_val, x_scale = TEMP_x, OBL = OBL) #TEMP_x is used in reverse ortho function
+  SCALE <- attributes(TEMP_x)$'scaled:center'
+  
+  #out object
+  OUT <- data.frame(x= x_val, y= y_val, x_scale = SCALE, OBL = OBL) #TEMP_x is used in reverse ortho function
   
   return(OUT)
 }
 
-post_ortho <- ortho_fun(NEKO_con_data, 150)
+
+post_ortho <- ortho_fun(NEKO_con_data, 0)
+plot(post_ortho$x, post_ortho$y, pch='.')
+
+plot(NEKO_con_data$x, -NEKO_con_data$y, pch='.')
+
 
 #----------------------------------------------#
 #Function to reverse transform for orthorectified to original
@@ -200,14 +208,17 @@ rev_orthro_fun <- function(IN, POST_ORTHO)
   #POST_ORTHO output frmo ortho_fun -> scaled x data used to find centers and reverse ortho
   
   
-  #For reverse ortho
-  x_center <- attributes(SCALE$TEMP_x)$'scaled:center'
+  #get centers of scaled data from ortho
+  x_center <- POST_ORTHO$x_scale
 
+  #points to be transformed
   XVAL <- IN[,1]
   YVAL <- IN[,2]
+  
+  #ortho adjuster used in original ortho
   OBL <- POST_ORTHO$OBL
   
-  #quadratic equation for Y
+  #quadratic equation to backsolve for y
   ay <- 1
   by <- OBL
   cy <- -YVAL
@@ -217,10 +228,11 @@ rev_orthro_fun <- function(IN, POST_ORTHO)
   #use y to solve for x
   out1_x <- XVAL/(out1_y + OBL)
   
-  #back to original coords
+  #transform back to original coords
   orig_y <- 750 - (YVAL/(out1_y + OBL))
   orig_x <- (XVAL/(out1_y + OBL)) + x_center
   
+  #out object
   OUT <- data.frame(orig_x= orig_x, orig_y= orig_y)
   
   return(OUT)
