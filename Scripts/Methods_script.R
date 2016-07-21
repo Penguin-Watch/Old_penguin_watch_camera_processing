@@ -85,7 +85,7 @@ if(Sys.info()[['sysname']] == 'Darwin')
 #OBL is obliqueness of camera (how much to ortho)
 
 #grep -> NND -> grep -> ortho_fun -> den_fun -> filter_fun -> km_fun ->
-#... order_fun -> 
+#... rev_ortho_fun -> order_fun -> poly_fun -> 
 
 
 # Load/process data -------------------------------------------------------
@@ -106,6 +106,35 @@ NEKO_con_data <- NEKO_con_data_imp[grep('NEKOc2013', NEKO_con_data_imp$path),c(1
 colnames(NEKO_con_data) <- c('ID', 'ZOOID', 'path', 'x', 'y')
 
 
+
+# Pre ortho ---------------------------------------------------------------
+
+pre_ortho_fun <- function(IN)
+{
+  #IN <- NEKO_con_data
+  
+  #remove erroneous clicks outside of defined region
+  to_rm <- which(IN$x > 1000 | IN$x < 0 | IN$y < 0 | IN$y > 750)
+  
+  #remove erroneous clicks
+  if(length(to_rm) > 0)
+  {
+    TEMP_x <- scale(IN$x[-to_rm], scale=FALSE)
+    TEMP_y <- 750 - IN$y[-to_rm]
+  }else{
+    TEMP_x <- scale(IN$x, scale=FALSE)
+    TEMP_y <- 750 - IN$y
+  }
+  
+  OUT <- as.matrix(data.frame(TEMP_x, TEMP_y))
+  
+  return(OUT)
+}
+
+#only actually used in point in poly fun
+ptm <- proc.time()
+pre_ortho_out <- pre_ortho_fun(NEKO_con_data)
+proc.time() - ptm
 
 # Orthorectification ------------------------------------------------------
 
@@ -138,7 +167,7 @@ ortho_fun <- function(IN, OBL)
   SCALE <- attributes(TEMP_x)$'scaled:center'
   
   #out object
-  OUT <- data.frame(x= x_val, y= y_val, x_scale = SCALE, OBL = OBL) #TEMP_x is used in reverse ortho function
+  OUT <- data.frame(x= x_val, y= y_val, x_scale = SCALE, OBL = OBL) #scale is used in reverse ortho function
   
   return(OUT)
 }
@@ -311,21 +340,21 @@ proc.time() - ptm
 #Function to reverse transform for orthorectified to original
 #does the reverse of above for given set of points
 
-rev_ortho_fun <- function(IN, POST_ORTHO)
+rev_ortho_fun <- function(KM_OUT, POST_ORTHO)
 {
   
   #IN is df of points to be transformed - column 1 must be x, column 2 must be y
   #POST_ORTHO output from ortho_fun -> scaled x data used to find centers and reverse ortho
-  
+
   #get centers of scaled data from ortho
-  x_center <- POST_ORTHO$x_scale
+  x_center <- POST_ORTHO$x_scale[1]
   
   #points to be transformed
   XVAL <- IN[,1]
   YVAL <- IN[,2]
   
   #ortho adjuster used in original ortho
-  OBL <- POST_ORTHO$OBL
+  OBL <- POST_ORTHO$OBL[1]
   
   #quadratic equation to backsolve for y
   ay <- 1
@@ -349,8 +378,9 @@ rev_ortho_fun <- function(IN, POST_ORTHO)
 }
 
 ptm <- proc.time()
-post_rev_ortho <- rev_ortho_fun(km_out, post_ortho)
+km_rev_ortho <- rev_ortho_fun(km_out, post_ortho)
 proc.time() - ptm
+
 
 # Data for time series creation --------------------------------------------
 
@@ -373,7 +403,7 @@ order_fun <- function(PRE_NND)
   y.pt <- (1536 - (PRE_NND$y[data_order]*2.048))
 
   #zooniverse consensus click data - sorted in chronological order
-  click.dat <- cbind(x.pt, y.pt)
+  click.dat <- data.frame(IMG= image_names, X= x.pt, Y= y.pt)
   
   return(click.dat)
 }
@@ -382,21 +412,24 @@ ptm <- proc.time()
 order_out <- order_fun(NEKO_con_data)
 proc.time() - ptm
 
-# Tesselation/time series creation ----------------------------------------
+
+
+# Tesselation ----------------------------------------
 
 #Tests each click location to determine which nest it is located in
 
 
-poly_fun <- function(KM_OUT)
+poly_fun <- function(KM_REV_ORTHO)
 {
   
-  KM_OUT <- km_out
+  #KM_REV_ORTHO <- km_rev_ortho
   
   width <- 2048
   height <- 1536
   
   #Voronoi tesselation using specified nest sites
-  vt <- deldir(KM_OUT[,1], KM_OUT[,2], rw= c(0, width, 0, height))
+  vt <- deldir(KM_REV_ORTHO[,1], KM_REV_ORTHO[,2], rw= c(0, width, 
+                                                         0, height))
   w <- tile.list(vt) #polygon coordinates
 
   polys <- vector(mode= 'list', length= length(w))
@@ -410,29 +443,53 @@ poly_fun <- function(KM_OUT)
   return(polys)
 }
 
+
 ptm <- proc.time()
-poly_fun(km_out)
+poly_out <- poly_fun(km_rev_ortho)
 proc.time() - ptm
 
 
 
-#determine which points are in which polygons
-out <- c()
-for (j in 1:length(polys))
+# Point in poly -----------------------------------------------------------
+
+#PRE ORTHO SHOULD BE FILTERED FOR BAD DATA PTS (over 1000, 750)
+
+point_fun <- function(POLY, ORDER_OUT)
 {
-  #j <- 1
-  temp <- pnt.in.poly(click.dat, polys[[j]])$pip
-  out <- cbind(out, temp)
-  temp.names[j] <- paste0("nest",j)  
+  #POLY <- poly_out
+  #ORDER_OUT <- order_out
+  
+  DATA <- cbind(ORDER_OUT[,2], ORDER_OUT[,2])
+  
+  #determine which points are in which polygons
+  out <- c()
+  temp.names <- c()
+  for (j in 1:length(POLY))
+  {
+    #j <- 1
+    temp <- pnt.in.poly(DATA, POLY[[j]])$pip
+    out <- cbind(out, temp)
+    temp.names[j] <- paste0("nest",j)  
+  }
+
+  #create data frame
+  colnames(out) <- temp.names
+  t_series <- data.frame(IMAGE = ORDER_OUT[,1], out)
+
+  return(t_series)
 }
 
-#create data frame
-colnames(out) <- temp.names
-t_series <- data.frame(IMAGE = image_names, out)
+ptm <- proc.time()
+point_fun_out <- point_fun(poly_out, order_out)
+proc.time() - ptm
+
+
+
+
+
 
 #unique images
-u_images <- unique(image_names)
-
+u_images <- unique(point_fun_out$IMAGE)
 
 #progress bar
 pb <- txtProgressBar(min = 1, max = NROW(u_images), style = 3)
