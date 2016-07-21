@@ -134,6 +134,8 @@ cam_trans <- function(input)
 #DEN is density threshold
 #OBL is obliqueness of camera (how much to ortho)
 
+#grep -> NND -> grep -> ortho_fun -> den_fun
+
 
 # Load/process data -------------------------------------------------------
 
@@ -205,8 +207,7 @@ rev_orthro_fun <- function(IN, POST_ORTHO)
 {
   
   #IN is df of points to be transformed - column 1 must be x, column 2 must be y
-  #POST_ORTHO output frmo ortho_fun -> scaled x data used to find centers and reverse ortho
-  
+  #POST_ORTHO output from ortho_fun -> scaled x data used to find centers and reverse ortho
   
   #get centers of scaled data from ortho
   x_center <- POST_ORTHO$x_scale
@@ -239,8 +240,11 @@ rev_orthro_fun <- function(IN, POST_ORTHO)
 }
 
 
-#----------------------------------------------#
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#JUST PLOTTING
+#|
+#v
 
 #NEKO data merged with transformed x and transformed y
 tNEKO_con_data <- data.frame(NEKO_con_data, xtr= x_val, ytr= y_val)
@@ -265,15 +269,19 @@ points(tp[,1], tp[,2], pch='.', col=rgb(.3,.8,.3, alpha=.3))
 #plot all consensus clicks for NEKOc_2013 orthorectified
 plot(x_val, y_val, pch='.')
 
+#^
+#|
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 
-
-# Click Density -----------------------------------------------------------
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#NOT NEEDED IF GREP AFTER NND AT BEGINNING
+#|
+#v
 
 
 #just 380 of images - about when creche happens 
-#this was determined here manually but can be automated with chick clicks
+#this was determined here manually but can be automated with NND
 series <- unique_images[1:380]
 
 temp_image <- c()
@@ -284,36 +292,56 @@ for (i in 1:length(series))
   temp_image <- rbind(temp_image, temp_lp)
 }
 
-
-#dimensions for kernel density estimation
-dimx <- 2048
-dimy <- 1536
-
-#kernel density estimation - calculates clicks density over continuous interval
-#bandwidth calculated using width.SJ function
-f2 <- kde2d(temp_image$xtr, temp_image$ytr, n=c(dimx, dimy),
-            h= c(width.SJ(temp_image$xtr), width.SJ(temp_image$ytr)))
-
-#scale density to 0,1 to better interpret
-sc_z <- apply(f2$z, scale, MARGIN= c(1, 2), center= 0, scale= max(f2$z))
-s2_s <- list(x= f2$x, y= f2$y, z= sc_z)
+<- temp_image
+head(temp_image)
+#^
+#|
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 
+# Click Density -----------------------------------------------------------
 
+den_fun <- function(IN)
+{
+  #IN <- post_ortho
+  #dimensions for kernel density estimation
+  dimx <- 2048
+  dimy <- 1536
+
+  #dimx <- 1000
+  #dimy <- 750
+  
+  #kernel density estimation - calculates clicks density over continuous interval
+  #bandwidth calculated using width.SJ function
+  f2 <- kde2d(IN$x, IN$y, n=c(dimx, dimy),
+              h= c(width.SJ(IN$x), width.SJ(IN$y)))
+
+  #scale density to 0,1 to better interpret
+  sc_z <- apply(f2$z, scale, MARGIN= c(1, 2), center= 0, scale= max(f2$z))
+  s2_s <- list(x= f2$x, y= f2$y, z= sc_z)
+  
+  OUT <- s2_s
+  
+  return(OUT)
+}
+
+den_out <- den_fun(post_ortho)
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#JUST PLOTTING
+#|
+#v
 # Density plots -----------------------------------------------------------
 
-#density plot heat map with scale bar
-#TAKES SOME TIME TO PLOT
-layout(matrix(c(1,2), nrow=2, ncol=1), heights=c(4,1))
-layout.show(2)
-par(mar=c(1,1,1,1))
-image(s2_s, col=rainbow(20), xaxt= 'n', yaxt= 'n')
-par(mar=c(3,1,1,1))
-image.scale(s2_s$z)
-
 #contour plot
-#MUCH QUICKER THAN HEAT MAP
-contour(s2_s)
+#Takes time
+contour(den_out)
+#^
+#|
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
 
 
 
