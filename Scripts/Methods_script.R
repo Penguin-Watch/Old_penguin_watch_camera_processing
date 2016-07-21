@@ -143,12 +143,13 @@ ortho_fun <- function(IN, OBL)
   return(OUT)
 }
 
+ptm <- proc.time()
+post_ortho <- ortho_fun(NEKO_con_data, 150)
+proc.time() - ptm
 
-post_ortho <- ortho_fun(NEKO_con_data, 0)
 plot(post_ortho$x, post_ortho$y, pch='.')
 
 plot(NEKO_con_data$x, -NEKO_con_data$y, pch='.')
-
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -159,6 +160,8 @@ plot(NEKO_con_data$x, -NEKO_con_data$y, pch='.')
 
 #just 380 of images - about when creche happens 
 #this was determined here manually but can be automated with NND
+unique_images <- unique(tNEKO_con_data$path)
+
 series <- unique_images[1:380]
 
 temp_image <- c()
@@ -169,8 +172,7 @@ for (i in 1:length(series))
   temp_image <- rbind(temp_image, temp_lp)
 }
 
-<- temp_image
-head(temp_image)
+
 #^
 #|
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -203,8 +205,9 @@ den_fun <- function(IN)
   return(OUT)
 }
 
+ptm <- proc.time()
 den_out <- den_fun(post_ortho)
-
+proc.time() - ptm
 
 
 
@@ -243,9 +246,9 @@ filter_fun <- function(DEN_OUT, POST_ORTHO, D_THR = 0.25)
   return(OUT)
 }
 
-
+ptm <- proc.time()
 filter_out <- filter_fun(den_out, post_ortho, D_THR = 0.25)
-
+proc.time() - ptm
 
 
 # K-means -----------------------------------------------------------------
@@ -255,17 +258,16 @@ filter_out <- filter_fun(den_out, post_ortho, D_THR = 0.25)
 #There are 26 nests in this image - determined manually
 #This is the time limiting step. Many starting points must be run to make
 #...sure cluster centers are determined correctly. 2million seems alright her
-
+#return nest centers in original coordinate system
 
 km_fun <- function(FILTER_OUT, NESTS, CORES, ITERS = 2000000)
 {
   #FILTER_OUT <- filter_out
-  #DATA <- as.matrix(FILTER_OUT)
   #ITERS = 2000
   #CORES = 1
   #NESTS = 26
    
-  ptm <- proc.time()
+  DATA <- as.matrix(FILTER_OUT)
   
   #parallelization
   par.function <- function(i)
@@ -285,14 +287,13 @@ km_fun <- function(FILTER_OUT, NESTS, CORES, ITERS = 2000000)
   temp.vec <- sapply(res, function(nests) {nests$tot.withinss})
   OUT <- res[[which.min(temp.vec)]]
 
-  proc.time() - ptm
-
+  
   return(OUT$centers)
 }
 
-
+ptm <- proc.time()
 km_out <- km_fun(filter_out, NESTS = 26, CORES = 2, ITERS= 2000)
-
+proc.time() - ptm
 
 #-----------#
 #benchmark results for MBP
@@ -304,6 +305,52 @@ km_out <- km_fun(filter_out, NESTS = 26, CORES = 2, ITERS= 2000)
 
 
 
+# reverse ortho on nest centers -------------------------------------------
+
+#----------------------------------------------#
+#Function to reverse transform for orthorectified to original
+#does the reverse of above for given set of points
+
+rev_ortho_fun <- function(IN, POST_ORTHO)
+{
+  
+  #IN is df of points to be transformed - column 1 must be x, column 2 must be y
+  #POST_ORTHO output from ortho_fun -> scaled x data used to find centers and reverse ortho
+  
+  #get centers of scaled data from ortho
+  x_center <- POST_ORTHO$x_scale
+  
+  #points to be transformed
+  XVAL <- IN[,1]
+  YVAL <- IN[,2]
+  
+  #ortho adjuster used in original ortho
+  OBL <- POST_ORTHO$OBL
+  
+  #quadratic equation to backsolve for y
+  ay <- 1
+  by <- OBL
+  cy <- -YVAL
+  DEL_y <- by^2 - (4*ay*cy)
+  out1_y <- (-by + sqrt(DEL_y))/(2*ay)
+  
+  #use y to solve for x
+  out1_x <- XVAL/(out1_y + OBL)
+  
+  #transform back to original coords
+  orig_y <- 750 - (YVAL/(out1_y + OBL))
+  orig_x <- (XVAL/(out1_y + OBL)) + x_center
+  
+  #out object
+  OUT <- data.frame(orig_x= orig_x, orig_y= orig_y)
+  
+  return(OUT)
+  
+}
+
+ptm <- proc.time()
+post_rev_ortho <- rev_ortho_fun(km_out, post_ortho)
+proc.time() - ptm
 
 # Data for time series creation --------------------------------------------
 
@@ -331,9 +378,9 @@ order_fun <- function(PRE_NND)
   return(click.dat)
 }
 
-
+ptm <- proc.time()
 order_out <- order_fun(NEKO_con_data)
-
+proc.time() - ptm
 
 # Tesselation/time series creation ----------------------------------------
 
@@ -363,9 +410,9 @@ poly_fun <- function(KM_OUT)
   return(polys)
 }
 
-
+ptm <- proc.time()
 poly_fun(km_out)
-
+proc.time() - ptm
 
 
 
@@ -476,46 +523,6 @@ cam_trans <- function(input)
 
 
 
-#----------------------------------------------#
-#Function to reverse transform for orthorectified to original
-#does the reverse of above for given set of points
-
-rev_orthro_fun <- function(IN, POST_ORTHO)
-{
-  
-  #IN is df of points to be transformed - column 1 must be x, column 2 must be y
-  #POST_ORTHO output from ortho_fun -> scaled x data used to find centers and reverse ortho
-  
-  #get centers of scaled data from ortho
-  x_center <- POST_ORTHO$x_scale
-  
-  #points to be transformed
-  XVAL <- IN[,1]
-  YVAL <- IN[,2]
-  
-  #ortho adjuster used in original ortho
-  OBL <- POST_ORTHO$OBL
-  
-  #quadratic equation to backsolve for y
-  ay <- 1
-  by <- OBL
-  cy <- -YVAL
-  DEL_y <- by^2 - (4*ay*cy)
-  out1_y <- (-by + sqrt(DEL_y))/(2*ay)
-  
-  #use y to solve for x
-  out1_x <- XVAL/(out1_y + OBL)
-  
-  #transform back to original coords
-  orig_y <- 750 - (YVAL/(out1_y + OBL))
-  orig_x <- (XVAL/(out1_y + OBL)) + x_center
-  
-  #out object
-  OUT <- data.frame(orig_x= orig_x, orig_y= orig_y)
-  
-  return(OUT)
-
-}
 
 
 
