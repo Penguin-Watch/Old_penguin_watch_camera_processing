@@ -159,10 +159,6 @@ colnames(NEKO_con_data) <- c('ID', 'ZOOID', 'path', 'x', 'y')
 #due to oblique angle of camera, image needs to be altered to correctly determine click density
 #essentially normalizing area
 
-#sc <- 2048/1536 #image dimensions
-#1000 - range of x clicks
-#1000/sc - y range must be 750
-
 
 ortho_fun <- function(IN, OBL)
 {
@@ -171,7 +167,7 @@ ortho_fun <- function(IN, OBL)
   
   #remove erroneous clicks outside of defined region (not likely any with consensus data)
   to_rm <- which(IN$x > 1000 | IN$x < 0 | IN$y < 0 | IN$y > 750)
-  #determine which image these erroneous points are associated with
+  #determine which image these erroneous points are associated with so they can be removed
 
   #transform image
   if(length(to_rm) > 0)
@@ -186,47 +182,50 @@ ortho_fun <- function(IN, OBL)
   x_val <- TEMP_x * (TEMP_y + OBL)
   y_val <- TEMP_y * (TEMP_y + OBL)
   
-  OUT <- data.frame(x= x_val, y= y_val, x_scale = TEMP_x) #TEMP_x is used in reverse ortho function
+  OUT <- data.frame(x= x_val, y= y_val, x_scale = TEMP_x, OBL = OBL) #TEMP_x is used in reverse ortho function
   
   return(OUT)
 }
 
 post_ortho <- ortho_fun(NEKO_con_data, 150)
 
-
 #----------------------------------------------#
 #Function to reverse transform for orthorectified to original
 #does the reverse of above for given set of points
-#put function here as code above determines code here
 
-rev_orthro_fun <- function(input)
+rev_orthro_fun <- function(IN, POST_ORTHO)
 {
+  
+  #IN is df of points to be transformed - column 1 must be x, column 2 must be y
+  #POST_ORTHO output frmo ortho_fun -> scaled x data used to find centers and reverse ortho
+  
+  
   #For reverse ortho
-  x_center <- attributes(input$TEMP_x)$'scaled:center'
+  x_center <- attributes(SCALE$TEMP_x)$'scaled:center'
 
-  #column 1 must be x, column 2 must be y
-
-  XVAL <- input$x_val
-  YVAL <- input$y_val
+  XVAL <- IN[,1]
+  YVAL <- IN[,2]
+  OBL <- POST_ORTHO$OBL
   
   #quadratic equation for Y
   ay <- 1
-  by <- 150
+  by <- OBL
   cy <- -YVAL
   DEL_y <- by^2 - (4*ay*cy)
   out1_y <- (-by + sqrt(DEL_y))/(2*ay)
   
   #use y to solve for x
-  out1_x <- XVAL/(out1_y + 150)
+  out1_x <- XVAL/(out1_y + OBL)
   
   #back to original coords
-  orig_y <- 750 - (YVAL/(out1_y + 150))
-  orig_x <- (XVAL/(out1_y + 150)) + x_center
+  orig_y <- 750 - (YVAL/(out1_y + OBL))
+  orig_x <- (XVAL/(out1_y + OBL)) + x_center
   
   OUT <- data.frame(orig_x= orig_x, orig_y= orig_y)
   
   return(OUT)
 }
+
 
 #----------------------------------------------#
 
@@ -393,7 +392,7 @@ proc.time() - ptm
 
 
 ####fix
-btrans_pts <- rev_ortho_fun(nests$center)
+btrans_pts <- rev_ortho_fun(nests$center, post_ortho)
 nest_cam_bt <- cam_trans(btrans_pts)
 
 #filtered clicks in high density area with nest centers
