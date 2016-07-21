@@ -77,9 +77,6 @@ if(Sys.info()[['sysname']] == 'Darwin')
 # Define functions --------------------------------------------------------
 
 
-
-
-
 #TOP FUNCTION 
 #function(DATA_IN, SITE, DEN, OBL)
 #DATA_IN is zoo consensus
@@ -88,7 +85,7 @@ if(Sys.info()[['sysname']] == 'Darwin')
 #OBL is obliqueness of camera (how much to ortho)
 
 #grep -> NND -> grep -> ortho_fun -> den_fun -> filter_fun -> km_fun ->
-#... 
+#... order_fun -> 
 
 
 # Load/process data -------------------------------------------------------
@@ -114,7 +111,7 @@ colnames(NEKO_con_data) <- c('ID', 'ZOOID', 'path', 'x', 'y')
 
 #due to oblique angle of camera, image needs to be altered to correctly determine click density
 #essentially normalizing area
-
+#IN is post NND
 
 ortho_fun <- function(IN, OBL)
 {
@@ -290,7 +287,7 @@ km_fun <- function(FILTER_OUT, NESTS, CORES, ITERS = 2000000)
 
   proc.time() - ptm
 
-  return(OUT)
+  return(OUT$centers)
 }
 
 
@@ -310,57 +307,66 @@ km_out <- km_fun(filter_out, NESTS = 26, CORES = 2, ITERS= 2000)
 
 # Data for time series creation --------------------------------------------
 
-#Arrange data by image # (time)
-#get jpg number from path name and sort
-data_order <- order(substr(NEKO_con_data$path, start=18, stop=23))
-image_names <- NEKO_con_data$path[data_order]
 
-x.pt <- (NEKO_con_data$x[data_order] * 2.048)
-y.pt <- (1536 - (NEKO_con_data$y[data_order]*2.048))
+#pre NND data, post grep for site
+#chronological order - likely needs to be updated using metadata
 
-#zooniverse consensus click data - sorted in chronological order
-click.dat <- cbind(x.pt, y.pt)
 
-#nest centers from output of define nest script
-nest.dat <- cbind(bt_x, bt_y)
+order_fun <- function(PRE_NND)
+{
+  
+  #PRE_NND <- NEKO_con_data
+  
+  #Arrange data by image # (time)
+  #get jpg number from path name and sort
+  data_order <- order(substr(PRE_NND$path, start=18, stop=23))
+  image_names <- PRE_NND$path[data_order]
+
+  x.pt <- (PRE_NND$x[data_order] * 2.048)
+  y.pt <- (1536 - (PRE_NND$y[data_order]*2.048))
+
+  #zooniverse consensus click data - sorted in chronological order
+  click.dat <- cbind(x.pt, y.pt)
+  
+  return(click.dat)
+}
+
+
+order_out <- order_fun(NEKO_con_data)
 
 
 # Tesselation/time series creation ----------------------------------------
 
 #Tests each click location to determine which nest it is located in
 
-width <- 2048
-height <- 1536
 
-vt <- deldir(nest.dat[,1],nest.dat[,2], rw= c(0,width,0,height)) #Voronoi tesselation using specified nest sites
-w <- tile.list(vt) #polygon coordinates
-
-polys <- vector(mode= 'list', length= length(w))
-for (i in seq(along= polys))
+poly_fun <- function(KM_OUT)
 {
-  pcrds <- cbind(w[[i]]$x, w[[i]]$y)
-  pcrds <- rbind(pcrds, pcrds[1,])
-  polys[[i]] <- pcrds #arrange polygon coordinates
+  
+  KM_OUT <- km_out
+  
+  width <- 2048
+  height <- 1536
+  
+  #Voronoi tesselation using specified nest sites
+  vt <- deldir(KM_OUT[,1], KM_OUT[,2], rw= c(0, width, 0, height))
+  w <- tile.list(vt) #polygon coordinates
+
+  polys <- vector(mode= 'list', length= length(w))
+  for (i in seq(along= polys))
+  {
+    pcrds <- cbind(w[[i]]$x, w[[i]]$y)
+    pcrds <- rbind(pcrds, pcrds[1,])
+    polys[[i]] <- pcrds #arrange polygon coordinates
+  }
+  
+  return(polys)
 }
 
 
+poly_fun(km_out)
 
-#-----------------------------------------#
-#PLOT all consensus clicks, nest centers, polygons, and nest numbers
 
-plot_jpeg(img_to_plot)
-points(click.dat, col=rgb(.3,.6,.3, alpha=.5), pch='.')
-points(nest.dat, col= gg_color_hue(26), pch= 19)
-
-#number nests on image
-text(nest.dat, labels=paste(1:26), col= 'white', cex = 1.2)
-
-#Plot polygons on image
-for (i in 1:length(polys))
-{
-  polygon(polys[[i]], lwd=3)
-}
-#-----------------------------------------#
 
 
 #determine which points are in which polygons
@@ -600,3 +606,28 @@ points(nest_cam_bt, col= gg_color_hue(26), pch= 19)
 #|
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#JUST PLOTTING
+#|
+#v
+
+#-----------------------------------------#
+#PLOT all consensus clicks, nest centers, polygons, and nest numbers
+
+plot_jpeg(img_to_plot)
+points(order_out, col=rgb(.3,.6,.3, alpha=.5), pch='.')
+points(km_out[,1], km_out[,2], col= gg_color_hue(26), pch= 19)
+
+#number nests on image
+text(km_out, labels=paste(1:26), col= 'white', cex = 1.2)
+
+#Plot polygons on image
+for (i in 1:length(polys))
+{
+  polygon(polys[[i]], lwd=3)
+}
+#-----------------------------------------#
+#^
+#|
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
