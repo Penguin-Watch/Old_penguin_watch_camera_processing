@@ -134,7 +134,8 @@ cam_trans <- function(input)
 #DEN is density threshold
 #OBL is obliqueness of camera (how much to ortho)
 
-#grep -> NND -> grep -> ortho_fun -> den_fun
+#grep -> NND -> grep -> ortho_fun -> den_fun -> filter_fun -> km_fun ->
+#... 
 
 
 # Load/process data -------------------------------------------------------
@@ -350,31 +351,50 @@ contour(den_out)
 #specifies density threshold, determines polygons of that density
 #then calculates which points are inside those density thresholds
 
-
-#DENSITY THRESHOLD - can be changed but this works well here
-THR <- 0.25
-
-#contour lines - 0.25 contour
-c_lines <- contourLines(s2_s, levels = THR)
-
-#number of polygons for 0.25 contour
-n_poly <- length(c_lines)
-
-#all clicks inside 0.25 density contour polygons
-X <- temp_image[,6:7]
-HD_clicks <- c()
-for (k in 1:n_poly)
+filter_fun <- function(DEN_OUT, POST_ORTHO, D_THR = 0.25)
 {
-  #k <- 1
-  tmat <- cbind(c_lines[[k]]$x, c_lines[[k]]$y)
-  temp <- which(pnt.in.poly(X, tmat)$pip > 0)
-  TT <- X[temp,]
-  HD_clicks <- rbind(HD_clicks, TT)
+
+  #DENSITY THRESHOLD
+  #D_THR <- 0.25
+  #DEN_OUT <- den_out
+  #POST_ORTHO <- post_ortho
+
+  #contour lines with density threshold
+  c_lines <- contourLines(DEN_OUT, levels = D_THR)
+
+  #number of polygons for 0.25 contour
+  n_poly <- length(c_lines)
+
+  #all clicks inside density threshold contour polygons
+  X <- POST_ORTHO[,1:2]
+  HD_clicks <- c()
+  for (k in 1:n_poly)
+  {
+    #k <- 1
+    tmat <- cbind(c_lines[[k]]$x, c_lines[[k]]$y)
+    temp <- which(pnt.in.poly(X, tmat)$pip > 0)
+    TT <- X[temp,]
+    HD_clicks <- rbind(HD_clicks, TT)
+  }
+  OUT <- data.frame(x= HD_clicks[,1], y= HD_clicks[,2])
+  
+  return(OUT)
 }
 
+
+filter_out <- filter_fun(den_out, post_ortho, D_THR = 0.25)
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#JUST PLOTTING
+#|
+#v
 #plot filtered points (only points in areas where scaled density is > 0.25)
-plot(HD_clicks[,1], HD_clicks[,2], pch='.')
+plot(filter_out[,1], filter_out[,2], pch='.')
 #reverse ortho and lay over image - then have humans click on image to define nests
+#^
+#|
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 
 # K-means -----------------------------------------------------------------
@@ -386,32 +406,47 @@ plot(HD_clicks[,1], HD_clicks[,2], pch='.')
 #...sure cluster centers are determined correctly. 2million seems alright here
 #It will be easy to run this on AWS or the supercoputer here at SBU
 
-#for benchmarking - run between #~~~~~~~~~~~~#
 
-#~~~~~~~~~~~~#
-ptm <- proc.time()
+
 
 #run in parallel with 2 cores
 
-par.function <- function(i)
+
+km_fun <- function(FILTER_OUT, NESTS, CORES, ITERS = 2000000)
 {
-  kmeans(out, 26, nstart= i, iter.max= 1000000000, algorithm = 'Hartigan-Wong')
+  #FILTER_OUT <- filter_out
+  #DATA <- as.matrix(FILTER_OUT)
+  #ITERS = 2000
+  #CORES = 1
+  #NESTS = 26
+   
+  ptm <- proc.time()
+  
+  #parallelization
+  par.function <- function(i)
+  {
+    kmeans(DATA, NESTS, nstart= i, iter.max= 1000000000, algorithm = 'Hartigan-Wong')
+  }
+
+
+  PER_CORE <- ITERS/CORES
+  VEC <- rep(PER_CORE, CORES)
+  
+  
+  #run function
+  res <- mclapply(VEC, FUN = par.function)
+
+  #merge output from different cores
+  temp.vec <- sapply(res, function(nests) {nests$tot.withinss})
+  OUT <- res[[which.min(temp.vec)]]
+
+  proc.time() - ptm
+
+  return(OUT)
 }
 
-#2 cores
-res <- mclapply(c(1000000, 1000000), FUN = par.function)
 
-#4 cores
-#res <- mclapply(c(500000, 500000, 500000, 500000), FUN = par.function)
-
-temp.vec <- sapply(res, function(nests) {nests$tot.withinss})
-nests <- res[[which.min(temp.vec)]]
-
-#1 core
-#nests <- kmeans(out, 26, nstart= 2000000, iter.max = 1000000000, algorithm = 'Hartigan-Wong')
-
-proc.time() - ptm
-#~~~~~~~~~~~~#
+km_out <- km_fun(filter_out, NESTS = 26, CORES = 2, ITERS= 2000)
 
 
 #-----------#
@@ -428,7 +463,6 @@ proc.time() - ptm
 
 #need to reverse orthorectify and transform to camera image dimensions to visualize
 #reverse orthorectification
-
 
 
 ####fix
