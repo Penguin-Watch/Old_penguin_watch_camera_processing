@@ -8,15 +8,21 @@
 #-Defines nests based on density thresholds
 #-Creates time series for each nest
 #
-#Just adult data currently - need chick and egg
-#Need to check methods on other sites 0 may need tweaking
-#
-#
-#Created: April 10, 2016
-#Modified: April 10, 2016
-#
-#Author: Casey Youngflesh
 ##################
+
+
+#post-zooniverse:
+#1) zoo out consensus data
+#2) grep one site at a time
+#3) calculate NND to determine correct time to look at nests
+#4) subset point of interest to just that specified in Step 3
+#5) orthorectify image (with scalar)
+#6) density threshold
+#7) filter for points only in high density areas
+#8) click tool - human specifies nest with high density clicks overlaid on image
+#9) run tesselation on nests specified in Step 7
+#10) create time series for each nest using consensus data
+
 
 #turn into function with 3 inputs (obliqueness, density threshold, # nests)
 
@@ -83,46 +89,6 @@ plot_jpeg = function(path, add=FALSE)
   par(mar= c(5, 4, 4, 2))
 }
 
-
-#function to add legend to density plot heat map
-#from: http://menugget.blogspot.com/2011/08/adding-scale-to-image-plot.html#more
-image.scale <- function(z, zlim, col = rainbow(20),
-                        breaks, horiz=TRUE, ylim=NULL, xlim=NULL, ...)
-{
-  if(!missing(breaks)){
-    if(length(breaks) != (length(col)+1)){stop("must have one more break than colour")}
-  }
-  if(missing(breaks) & !missing(zlim)){
-    breaks <- seq(zlim[1], zlim[2], length.out=(length(col)+1)) 
-  }
-  if(missing(breaks) & missing(zlim)){
-    zlim <- range(z, na.rm=TRUE)
-    zlim[2] <- zlim[2]+c(zlim[2]-zlim[1])*(1E-3)#adds a bit to the range in both directions
-    zlim[1] <- zlim[1]-c(zlim[2]-zlim[1])*(1E-3)
-    breaks <- seq(zlim[1], zlim[2], length.out=(length(col)+1))
-  }
-  poly <- vector(mode="list", length(col))
-  for(i in seq(poly)){
-    poly[[i]] <- c(breaks[i], breaks[i+1], breaks[i+1], breaks[i])
-  }
-  xaxt <- ifelse(horiz, "s", "n")
-  yaxt <- ifelse(horiz, "n", "s")
-  if(horiz){YLIM<-c(0,1); XLIM<-range(breaks)}
-  if(!horiz){YLIM<-range(breaks); XLIM<-c(0,1)}
-  if(missing(xlim)) xlim=XLIM
-  if(missing(ylim)) ylim=YLIM
-  plot(1,1,t="n",ylim=ylim, xlim=xlim, xaxt=xaxt, yaxt=yaxt, xaxs="i", yaxs="i", ...)  
-  for(i in seq(poly)){
-    if(horiz){
-      polygon(poly[[i]], c(0,0,1,1), col=col[i], border=NA)
-    }
-    if(!horiz){
-      polygon(c(0,0,1,1), poly[[i]], col=col[i], border=NA)
-    }
-  }
-}
-
-
 #ggplot colors function
 gg_color_hue <- function(n, OUT = 'HEX')
 {
@@ -160,12 +126,27 @@ cam_trans <- function(input)
 
 
 
+
+#TOP FUNCTION 
+#function(DATA_IN, SITE, DEN, OBL)
+#DATA_IN is zoo consensus
+#SITE is site to grep
+#DEN is density threshold
+#OBL is obliqueness of camera (how much to ortho)
+
+
 # Load/process data -------------------------------------------------------
+
+#generalize to read in zoo consensus data
+#grep one site at a time
+#run NND analysis to determine appropriate time
+
 
 setwd(paste0(dir, 'Data'))
 
 #import NEKOc data
 NEKO_con_data_imp <- read.csv('NEKOc_consensus.csv', header=TRUE) 
+
 
 #just 2013
 NEKO_con_data <- NEKO_con_data_imp[grep('NEKOc2013', NEKO_con_data_imp$path),c(1:5)]
@@ -182,23 +163,35 @@ colnames(NEKO_con_data) <- c('ID', 'ZOOID', 'path', 'x', 'y')
 #1000 - range of x clicks
 #1000/sc - y range must be 750
 
-#remove erroneous clicks outside of defined region (not likely any with consensus data)
-to_rm <- which(NEKO_con_data$x > 1000 | NEKO_con_data$x < 0 | NEKO_con_data$y < 0 | NEKO_con_data$y > 750)
-#determine which image these erroneous points are associated with
 
-#transform image
-if(length(to_rm) > 0)
+ortho_fun <- function(IN, OBL)
 {
-  NEKO_x <- scale(NEKO_con_data$x[-to_rm], scale=FALSE)
-  NEKO_y <- 750 - NEKO_con_data$y[-to_rm]
-}else{
-  NEKO_x <- scale(NEKO_con_data$x, scale=FALSE)
-  NEKO_y <- 750 - NEKO_con_data$y
+  #IN <- NEKO_con_data
+  #OBL <- 150
+  
+  #remove erroneous clicks outside of defined region (not likely any with consensus data)
+  to_rm <- which(IN$x > 1000 | IN$x < 0 | IN$y < 0 | IN$y > 750)
+  #determine which image these erroneous points are associated with
+
+  #transform image
+  if(length(to_rm) > 0)
+  {
+    TEMP_x <- scale(IN$x[-to_rm], scale=FALSE)
+    TEMP_y <- 750 - IN$y[-to_rm]
+  }else{
+    TEMP_x <- scale(IN$x, scale=FALSE)
+    TEMP_y <- 750 - IN$y
+  }
+
+  x_val <- TEMP_x * (TEMP_y + OBL)
+  y_val <- TEMP_y * (TEMP_y + OBL)
+  
+  OUT <- data.frame(x= x_val, y= y_val, x_scale = TEMP_x) #TEMP_x is used in reverse ortho function
+  
+  return(OUT)
 }
 
-x_val <- NEKO_x * (NEKO_y + 150)
-y_val <- NEKO_y * (NEKO_y + 150)
-
+post_ortho <- ortho_fun(NEKO_con_data, 150)
 
 
 #----------------------------------------------#
@@ -206,15 +199,15 @@ y_val <- NEKO_y * (NEKO_y + 150)
 #does the reverse of above for given set of points
 #put function here as code above determines code here
 
-#For reverse ortho
-x_center <- attributes(NEKO_x)$'scaled:center'
-
-#column 1 must be x, column 2 must be y
-
-back_trans <- function(input)
+rev_orthro_fun <- function(input)
 {
-  XVAL <- input[,1]
-  YVAL <- input[,2]
+  #For reverse ortho
+  x_center <- attributes(input$TEMP_x)$'scaled:center'
+
+  #column 1 must be x, column 2 must be y
+
+  XVAL <- input$x_val
+  YVAL <- input$y_val
   
   #quadratic equation for Y
   ay <- 1
@@ -231,8 +224,10 @@ back_trans <- function(input)
   orig_x <- (XVAL/(out1_y + 150)) + x_center
   
   OUT <- data.frame(orig_x= orig_x, orig_y= orig_y)
+  
   return(OUT)
 }
+
 #----------------------------------------------#
 
 
@@ -394,7 +389,11 @@ proc.time() - ptm
 
 #need to reverse orthorectify and transform to camera image dimensions to visualize
 #reverse orthorectification
-btrans_pts <- back_trans(nests$center)
+
+
+
+####fix
+btrans_pts <- rev_ortho_fun(nests$center)
 nest_cam_bt <- cam_trans(btrans_pts)
 
 #filtered clicks in high density area with nest centers
