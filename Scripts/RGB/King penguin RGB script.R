@@ -1,4 +1,11 @@
+###############
+#Script to calculate mean, sd, skew, kurtosis of King Penguin images
+#
+#GOLDa 2016a as a test data set for the code
+###############
 
+
+# Install/load packages --------------------------------------------------------
 
 if('pacman' %in% rownames(installed.packages()) == FALSE)
 {
@@ -6,6 +13,7 @@ if('pacman' %in% rownames(installed.packages()) == FALSE)
 }
 
 pacman::p_load(jpeg, moments, tools, ggplot2, reshape2)
+
 
 
 
@@ -30,6 +38,9 @@ if(Sys.info()[['sysname']] == 'Darwin')
 }
 
 
+
+# Set up  -----------------------------------------------------------------
+
 setwd(paste0(dir, 'Images/GOLDa2016a'))
 
 images <- list.files()
@@ -51,20 +62,12 @@ mask<-mask1[, , 2]
 #should the mask actually be 1, NA?
 #if so, this will speed computing.
 
-#^
-#|
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#|
-#V
 #Mask
 #to mask
 #masked <- as.matrix(img*mask)
 
 rmatrix<-mask1[, , 3]
+
 #^
 #|
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -85,7 +88,7 @@ results <- data.frame(name = as.character(), red_mean = as.numeric(), red_sd = a
 
 
 
-# Loop for mean, sd, skew, kurtosis ---------------------------------------
+# Loop for mean, sd, skew, kurtosis of each image ---------------------------------------
 
 
 pb <- txtProgressBar(min = 1, max = length(images), style = 3)
@@ -106,7 +109,7 @@ for (i in 1:length(images))
     horiz <- d[2]
     
     #don't know what the next line of code does
-    #  file_names <- dir("C:/Users/Tom/Dropbox/Kittiwake remote camera/01-07-2013/aldkitt_", pattern = "^stat[[:digit:]]+_pwg[[:digit:]]+\\.JPG$")
+    #file_names <- dir("C:/Users/Tom/Dropbox/Kittiwake remote camera/01-07-2013/aldkitt_", pattern = "^stat[[:digit:]]+_pwg[[:digit:]]+\\.JPG$")
     
     #RED
     temp_r1 <- temp_jpeg[1:vert, 1:horiz, 1]
@@ -153,25 +156,41 @@ close(pb)
 
 
 
+
+# Write results to file ---------------------------------------------------
+
+write.table(results, "King_RGB", row.names = FALSE, sep = ",")
+
+
+
+
+# Plot summary metrics ----------------------------------------------------
+
 head(results)
-
-
-
 m_results <- melt(results, 'name')
 ggplot(m_results, aes(x = name, y = value, group = variable, color = variable)) +
   geom_line() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-#write.table(results, "C:/Users/Tom/Documents/Penguin image analysis/RGB paper/SPIGbrgbout.csv", row.names=F, sep=",")
 
 
 
-#don't know what this bit is...
-k <- sali1[1:1536, 1:2048, 1]
-k <- as.vector(k)
-kurtosis(k)
+# Plot jpeg function from pwatch script -----------------------------------
 
-kurtosis(sali1[1:1536, 1:2048, 1], na.rm = FALSE)
+plot_jpeg = function(path, add=FALSE)
+{
+  par(mar=  c(0,0,0,0))
+  jpg = readJPEG(path, native=T) # read the file
+  res = dim(jpg)[1:2] # get the resolution
+  if (!add) # initialize an empty plot area if add==FALSE
+    plot(1,1,xlim=c(1,res[2]),ylim=c(1,res[1]),asp=1,type='n',xaxs='i',yaxs='i',xaxt='n',yaxt='n',xlab='',ylab='',bty='n')
+  rasterImage(jpg,1,1,res[2],res[1])
+  par(mar= c(5, 4, 4, 2))
+}
+
+
+i <- 1
+plot_jpeg(images[i])
 
 
 
