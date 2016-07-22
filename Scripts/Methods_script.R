@@ -8,9 +8,8 @@
 #
 ##################
 
+#fix polygon plot
 #feed in master data
-#clean up code and issues
-#make nice plots
 
 
 
@@ -75,10 +74,8 @@ if(Sys.info()[['sysname']] == 'Darwin')
 
 
 
-# Define functions --------------------------------------------------------
+# TOP FUNCTION --------------------------------------------------------
 
-
-#TOP FUNCTION 
 #function(DATA_IN, SITE, DEN, OBL, NESTS)
 #DATA_IN is zoo consensus
 #SITE is site to grep
@@ -105,38 +102,6 @@ NEKO_con_data_imp <- read.csv('NEKOc_consensus.csv', header=TRUE)
 #just 2013
 NEKO_con_data <- NEKO_con_data_imp[grep('NEKOc2013', NEKO_con_data_imp$path),c(1:5)]
 colnames(NEKO_con_data) <- c('ID', 'ZOOID', 'path', 'x', 'y')
-
-
-
-# Pre ortho ---------------------------------------------------------------
-
-pre_ortho_fun <- function(IN)
-{
-  #IN <- NEKO_con_data
-  
-  #remove erroneous clicks outside of defined region
-  to_rm <- which(IN$x > 1000 | IN$x < 0 | IN$y < 0 | IN$y > 750)
-  
-  #remove erroneous clicks
-  if(length(to_rm) > 0)
-  {
-    TEMP_x <- scale(IN$x[-to_rm], scale=FALSE)
-    TEMP_y <- 750 - IN$y[-to_rm]
-  }else{
-    TEMP_x <- scale(IN$x, scale=FALSE)
-    TEMP_y <- 750 - IN$y
-  }
-  
-  OUT <- as.matrix(data.frame(TEMP_x, TEMP_y))
-  
-  return(OUT)
-}
-
-#only actually used in point in poly fun
-ptm <- proc.time()
-pre_ortho_out <- pre_ortho_fun(NEKO_con_data)
-proc.time() - ptm
-
 
 
 # Orthorectification ------------------------------------------------------
@@ -179,15 +144,13 @@ ptm <- proc.time()
 post_ortho <- ortho_fun(NEKO_con_data, 150)
 proc.time() - ptm
 
-#plot(post_ortho$x, post_ortho$y, pch='.')
-#plot(NEKO_con_data$x, -NEKO_con_data$y, pch='.')
+
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #NOT NEEDED IF GREP AFTER NND AT BEGINNING
 #|
 #v
-
 
 #just 380 of images - about when creche happens 
 #this was determined here manually but can be automated with NND
@@ -203,21 +166,20 @@ for (i in 1:length(series))
   temp_image <- rbind(temp_image, temp_lp)
 }
 
-
 #^
 #|
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 
-#need to ortho for just period of interest and then (whicih would be done
+#need to ortho for just period of interest and then (which would be done
 #earlier in NND function)
 
 
 # Click Density -----------------------------------------------------------
 
-den_fun <- function(IN)
+den_fun <- function(POST_ORTHO)
 {
-  #IN <- post_ortho
+  #POST_ORTHO <- post_ortho
   #dimensions for kernel density estimation
   dimx <- 2048
   dimy <- 1536
@@ -227,8 +189,9 @@ den_fun <- function(IN)
   
   #kernel density estimation - calculates clicks density over continuous interval
   #bandwidth calculated using width.SJ function
-  f2 <- kde2d(IN$x, IN$y, n=c(dimx, dimy),
-              h= c(width.SJ(IN$x), width.SJ(IN$y)))
+  #could maybe make dunction quicker by reducing n...
+  f2 <- kde2d(POST_ORTHO$x, POST_ORTHO$y, n=c(dimx, dimy),
+              h= c(width.SJ(POST_ORTHO$x), width.SJ(POST_ORTHO$y)))
 
   #scale density to 0,1 to better interpret
   sc_z <- apply(f2$z, scale, MARGIN= c(1, 2), center= 0, scale= max(f2$z))
@@ -345,7 +308,7 @@ proc.time() - ptm
 
 # reverse ortho on nest centers -------------------------------------------
 
-#Function to reverse transform for orthorectified to original
+#Function to reverse transform for orthorectified to original - 1000 x 750
 
 rev_ortho_fun <- function(KM_OUT, POST_ORTHO)
 {
@@ -357,8 +320,8 @@ rev_ortho_fun <- function(KM_OUT, POST_ORTHO)
   x_center <- POST_ORTHO$x_scale[1]
   
   #points to be transformed
-  XVAL <- IN[,1]
-  YVAL <- IN[,2]
+  XVAL <- KM_OUT[,1]
+  YVAL <- KM_OUT[,2]
   
   #ortho adjuster used in original ortho
   OBL <- POST_ORTHO$OBL[1]
@@ -374,8 +337,8 @@ rev_ortho_fun <- function(KM_OUT, POST_ORTHO)
   out1_x <- XVAL/(out1_y + OBL)
   
   #transform back to original coords
-  orig_y <- 750 - (YVAL/(out1_y + OBL))
-  orig_x <- (XVAL/(out1_y + OBL)) + x_center
+  orig_y <- (750 - (YVAL/(out1_y + OBL)))
+  orig_x <- ((XVAL/(out1_y + OBL)) + x_center)
   
   #out object
   OUT <- data.frame(orig_x= orig_x, orig_y= orig_y)
@@ -395,34 +358,43 @@ proc.time() - ptm
 # Data for time series creation --------------------------------------------
 
 
-#pre NND data, post grep for site
+#post NND data, post grep for site - images of interest
 #chronological order - likely needs to be updated using metadata
 
 
-#should filter bad data at this step as it's fed into next function
-order_fun <- function(PRE_NND)
+order_fun <- function(POST_NND)
 {
   
-  #PRE_NND <- NEKO_con_data
+  #POST_NND <- NEKO_con_data
   
   #Arrange data by image # (time)
   #get jpg number from path name and sort
-  data_order <- order(substr(PRE_NND$path, start=18, stop=23))
-  image_names <- PRE_NND$path[data_order]
+  data_order <- order(substr(POST_NND$path, start=18, stop=23))
+  image_names <- POST_NND$path[data_order]
 
-  x.pt <- (PRE_NND$x[data_order] * 2.048)
-  y.pt <- (1536 - (PRE_NND$y[data_order]*2.048))
+  x.pt <- (POST_NND$x[data_order])
+  y.pt <- (750 - (POST_NND$y[data_order]))
 
   #zooniverse consensus click data - sorted in chronological order
   click.dat <- data.frame(IMG= image_names, X= x.pt, Y= y.pt)
+
+  #remove erroneous clicks outside of defined region
+  to_rm <- which(click.dat$X > 1000 | click.dat$X < 0 | click.dat$Y < 0 | click.dat$Y > 750)
+
+  #remove erroneous clicks
+  if(length(to_rm) > 0)
+  {
+    OUT <- click.dat[-to_rm,]
+  }else{
+    OUT <- click.dat
+  }
   
-  return(click.dat)
+  return(OUT)
 }
 
 ptm <- proc.time()
 order_out <- order_fun(NEKO_con_data)
 proc.time() - ptm
-
 
 
 
@@ -437,12 +409,13 @@ poly_fun <- function(KM_REV_ORTHO)
   
   #KM_REV_ORTHO <- km_rev_ortho
   
-  width <- 2048
-  height <- 1536
+  width <- 1000
+  height <- 750
   
   #Voronoi tesselation using specified nest sites
-  vt <- deldir(KM_REV_ORTHO[,1], KM_REV_ORTHO[,2], rw= c(0, width, 
-                                                         0, height))
+  vt <- suppressWarnings(deldir(KM_REV_ORTHO[,1], KM_REV_ORTHO[,2], 
+                               rw= c(0, width, 0, height)))
+  
   w <- tile.list(vt) #polygon coordinates
 
   polys <- vector(mode= 'list', length= length(w))
@@ -466,8 +439,6 @@ proc.time() - ptm
 
 
 # Point in poly -----------------------------------------------------------
-
-#PRE ORTHO SHOULD BE FILTERED FOR BAD DATA PTS (over 1000, 750)
 
 point_fun <- function(POLY, ORDER_OUT)
 {
@@ -606,114 +577,131 @@ cam_trans <- function(input)
 
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#JUST PLOTTING
-#|
-#v
-
-#NEKO data merged with transformed x and transformed y
-tNEKO_con_data <- data.frame(NEKO_con_data, xtr= x_val, ytr= y_val)
+# All clicks over camera image --------------------------------------------
 
 #unique images that we have consensus data for
-unique_images <- unique(tNEKO_con_data$path)
+unique_images <- unique(NEKO_con_data$path)
 
-#Plots of normal vs transformed clicks to see effect of transformation
-#first plot camera image
-
-#unique images needs to be defined first
+#plot camera image
 setwd(paste0(dir, 'Images/NEKOc'))
 i <- 23
 img_to_plot <- paste0(substr(unique_images[i], 7,27), '.JPG')
 plot_jpeg(img_to_plot)
 
 #plot all consensus clicks for NEKOc_2013
-#transform clicks to camera dimensions then plot
 tp <- cam_trans(cbind(NEKO_con_data$x, NEKO_con_data$y))
 points(tp[,1], tp[,2], pch='.', col=rgb(.3,.8,.3, alpha=.3))
 
+
+# Orthoed clicks ----------------------------------------------------------
+
 #plot all consensus clicks for NEKOc_2013 orthorectified
-plot(x_val, y_val, pch='.')
-
-#^
-#|
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+plot(post_ortho$x, post_ortho$y, pch='.')
 
 
 
+# density plots ------------------------------------------------------------
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#JUST PLOTTING
-#|
-#v
-# Density plots
-
-#contour plot
-#Takes time
+#takes time
 contour(den_out)
-#^
-#|
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+#function to add legend to density plot heat map
+#from: http://menugget.blogspot.com/2011/08/adding-scale-to-image-plot.html#more
+
+image.scale <- function(z, zlim, col = rainbow(20), breaks, horiz=TRUE, ylim=NULL, xlim=NULL, ...)
+{
+  if(!missing(breaks)){
+    if(length(breaks) != (length(col)+1)){stop("must have one more break than colour")}
+  }
+  if(missing(breaks) & !missing(zlim)){
+    breaks <- seq(zlim[1], zlim[2], length.out=(length(col)+1)) 
+  }
+  if(missing(breaks) & missing(zlim)){
+    zlim <- range(z, na.rm=TRUE)
+    zlim[2] <- zlim[2]+c(zlim[2]-zlim[1])*(1E-3)#adds a bit to the range in both directions
+    zlim[1] <- zlim[1]-c(zlim[2]-zlim[1])*(1E-3)
+    breaks <- seq(zlim[1], zlim[2], length.out=(length(col)+1))
+  }
+  poly <- vector(mode="list", length(col))
+  for(i in seq(poly)){
+    poly[[i]] <- c(breaks[i], breaks[i+1], breaks[i+1], breaks[i])
+  }
+  xaxt <- ifelse(horiz, "s", "n")
+  yaxt <- ifelse(horiz, "n", "s")
+  if(horiz){YLIM<-c(0,1); XLIM<-range(breaks)}
+  if(!horiz){YLIM<-range(breaks); XLIM<-c(0,1)}
+  if(missing(xlim)) xlim=XLIM
+  if(missing(ylim)) ylim=YLIM
+  plot(1,1,t="n",ylim=ylim, xlim=xlim, xaxt=xaxt, yaxt=yaxt, xaxs="i", yaxs="i", ...)  
+
+  for(i in seq(poly)){
+    if(horiz){
+      polygon(poly[[i]], c(0,0,1,1), col=col[i], border=NA)
+    }
+    if(!horiz){
+      polygon(c(0,0,1,1), poly[[i]], col=col[i], border=NA)
+    }
+  }
+}
+
+#TAKES SOME TIME TO PLOT
+layout(matrix(c(1,2), nrow=2, ncol=1), heights=c(4,1))
+layout.show(2)
+par(mar=c(1,1,1,1))
+image(s2_s, col=rainbow(20), xaxt= 'n', yaxt= 'n')
+par(mar=c(3,1,1,1))
+image.scale(s2_s$z)
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#JUST PLOTTING
-#|
-#v
+
+# plot filtered orthoed points --------------------------------------------
+
 #plot filtered points (only points in areas where scaled density is > 0.25)
 plot(filter_out[,1], filter_out[,2], pch='.')
-#reverse ortho and lay over image - then have humans click on image to define nests
-#^
-#|
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#JUST PLOTTING
-#|
-#v
-# Plot and process
 
-#need to reverse orthorectify and transform to camera image dimensions to visualize
-#reverse orthorectification
+#fix dimension/plotting issue
 
-####fix
-btrans_pts <- rev_ortho_fun(km_out$center, post_ortho)
+
+# plot filtered clicks with nest centers ----------------------------------
+
+btrans_pts <- rev_ortho_fun(km_out, post_ortho)
 nest_cam_bt <- cam_trans(btrans_pts)
 
 #filtered clicks in high density area with nest centers
 plot(filter_out[,1], filter_out[,2], pch='.')
-points(km_out$centers, col= gg_color_hue(26), pch= 19)
+points(km_out, col= gg_color_hue(26), pch= 19)
 
-#camera image with nest centers
+
+
+# Camera image with nest centers ------------------------------------------
+
 plot_jpeg(img_to_plot)
 #pts.fun(NEKO_con_data[,4:5]) # plots all consensus click points
 points(nest_cam_bt, col= gg_color_hue(26), pch= 19)
-#^
-#|
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#JUST PLOTTING
-#|
-#v
 
-#-----------------------------------------#
-#PLOT all consensus clicks, nest centers, polygons, and nest numbers
+# Image with all clicks and nest centers ----------------------------------
 
 plot_jpeg(img_to_plot)
-points(order_out, col=rgb(.3,.6,.3, alpha=.5), pch='.')
-points(km_out[,1], km_out[,2], col= gg_color_hue(26), pch= 19)
+points(order_out[,2], order_out[,3], col=rgb(.3,.6,.3, alpha=.5), pch='.')
+points(nest_cam_bt, col= gg_color_hue(26), pch= 19)
+
+
+
+# Add nest numbers to plot ------------------------------------------------
 
 #number nests on image
-text(km_out, labels=paste(1:26), col= 'white', cex = 1.2)
+text(nest_cam_bt, labels=paste(1:26), col= 'white', cex = 1.2)
+
+
+
+# Add polygons ------------------------------------------------------------
 
 #Plot polygons on image
-for (i in 1:length(polys))
+for (i in 1:length(poly_out))
 {
-  polygon(polys[[i]], lwd=3)
+  polygon(poly_out[[i]], lwd=3)
 }
-#-----------------------------------------#
-#^
-#|
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
