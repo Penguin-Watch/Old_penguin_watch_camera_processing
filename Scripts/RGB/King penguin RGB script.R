@@ -5,6 +5,8 @@
 ###############
 
 
+
+
 # Install/load packages --------------------------------------------------------
 
 if('pacman' %in% rownames(installed.packages()) == FALSE)
@@ -17,10 +19,13 @@ pacman::p_load(jpeg, moments, tools, ggplot2, reshape2)
 
 
 
+
 # Clear environment -------------------------------------------------------
 
 rm(list = ls())
 dev.off()
+
+
 
 
 
@@ -48,6 +53,11 @@ images <- list.files()
 #not needed
 #files2<-gsub(".JPG", ".jpg", files)
 
+
+
+
+
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #|
 #V
@@ -71,6 +81,8 @@ rmatrix<-mask1[, , 3]
 #^
 #|
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+
 
 
 
