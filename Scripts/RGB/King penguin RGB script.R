@@ -177,21 +177,85 @@ write.table(results, "King_RGB.csv", row.names = FALSE, sep = ",")
 
 
 
+# Standardize metrics -----------------------------------------------------
+
+st_results <- apply(results[,-1], 2, function(X){scale(X, scale = FALSE)})
+
+st_res_df <- data.frame(name = results[,1], st_results)
+
+
+
 
 # Plot summary metrics ----------------------------------------------------
 
-#need to standardize withing each metric - color code by summary metric
+#all metrics
+m_st_results <- melt(st_res_df, 'name')
 
-head(results)
-m_results <- melt(results, 'name')
-ggplot(m_results, aes(x = name, y = value, group = variable, color = variable)) +
-  geom_line() + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(m_st_results, aes(x = name, y = value, group = variable, color = variable)) +
+  geom_line(alpha=0.5) + 
+  theme(axis.text.x = element_blank())
+
+
+#ALL red
+m_st_red <- melt(st_res_df[,1:5], 'name')
+
+ggplot(m_st_red, aes(x = name, y = value, group = variable, color = variable)) +
+  geom_line(alpha=0.5) + 
+  theme(axis.text.x = element_blank())
+
+
+#ALL green
+m_st_green <- melt(st_res_df[,c(1, 6:9)], 'name')
+
+ggplot(m_st_green, aes(x = name, y = value, group = variable, color = variable)) +
+  geom_line(alpha=0.5) + 
+  theme(axis.text.x = element_blank())
+
+
+#ALL blue
+m_st_blue <- melt(st_res_df[,c(1, 10:13)], 'name')
+
+ggplot(m_st_blue, aes(x = name, y = value, group = variable, color = variable)) +
+  geom_line(alpha=0.5) + 
+  theme(axis.text.x = element_blank())
+
+
+
+#ALL mean
+m_st_mean <- melt(st_res_df[,c(1:2,6,10)], 'name')
+
+ggplot(m_st_mean, aes(x = name, y = value, group = variable, color = variable)) +
+  geom_line(alpha=0.5) + 
+  theme(axis.text.x = element_blank())
+
+#ALL sd
+m_st_sd <- melt(st_res_df[,c(1,3,7,11)], 'name')
+
+ggplot(m_st_sd, aes(x = name, y = value, group = variable, color = variable)) +
+  geom_line(alpha=0.5) + 
+  theme(axis.text.x = element_blank())
+
+#ALL skew
+m_st_skew <- melt(st_res_df[,c(1,4,8,12)], 'name')
+
+ggplot(m_st_skew, aes(x = name, y = value, group = variable, color = variable)) +
+  geom_line(alpha=0.5) + 
+  theme(axis.text.x = element_blank())
+
+#ALL kurtosis
+m_st_kurtosis <- melt(st_res_df[,c(1,5,9,13)], 'name')
+
+ggplot(m_st_kurtosis, aes(x = name, y = value, group = variable, color = variable)) +
+  geom_line(alpha=0.5) + 
+  theme(axis.text.x = element_blank())
+
 
 
 
 
 # Plot jpeg function from pwatch script -----------------------------------
+
+setwd(paste0(dir, 'Images/GOLDa2016a'))
 
 plot_jpeg = function(path, add=FALSE)
 {
@@ -205,7 +269,7 @@ plot_jpeg = function(path, add=FALSE)
 }
 
 
-i <- 1
+i <- 2
 plot_jpeg(images[i])
 
 
