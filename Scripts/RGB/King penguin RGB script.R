@@ -1,7 +1,5 @@
 
 
-
-
 if('pacman' %in% rownames(installed.packages()) == FALSE)
 {
   install.packages(pacman)
@@ -57,9 +55,6 @@ mask<-mask1[, , 2]
 #|
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-img_jpeg <- readJPEG(images[1])
-img_ch3 <- as.matrix(img_jpeg[, , 3])
-
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -76,11 +71,13 @@ rmatrix<-mask1[, , 3]
 
 
 
-results <- data.frame(name = as.character(), red_mean = as.numeric(), red_kurtosis = as.numeric(), 
-                      red_skew = as.numeric(), red_sd = as.numeric(), green_mean = as.numeric(), 
-                      green_kurtosis = as.numeric(), green_skew = as.numeric(), green_sd = as.numeric(),
-                      blue_mean = as.numeric(), blue_kurtosis = as.numeric(), blue_skew = as.numeric(), 
-                      blue_sd = as.numeric())
+results <- data.frame(name = as.character(), red_mean = as.numeric(), red_sd = as.numeric(),
+                      red_skew = as.numeric(), red_kurtosis = as.numeric(), 
+                      green_mean = as.numeric(), green_sd = as.numeric(), green_skew = as.numeric(),
+                      green_kurtosis = as.numeric(), blue_mean = as.numeric(), blue_sd = as.numeric(),
+                      blue_skew = as.numeric(), blue_kurtosis = as.numeric())
+
+
 
 
 #take the mean, skew, kurtosis, sd
@@ -88,55 +85,69 @@ for (i in 1:length(images))
 {
   i <- 1  
   
-  
   if (tolower(file_ext(images[i])) == 'jpg') 
   {
-    paste(path, files2[i])
-    sali1 <- readJPEG(paste(path,files2[i], sep=""))
-    d <- dim(sali1)
-    v <- d[1]
-    h <- d[2]
-  #  file_names <- dir("C:/Users/Tom/Dropbox/Kittiwake remote camera/01-07-2013/aldkitt_", pattern = "^stat[[:digit:]]+_pwg[[:digit:]]+\\.JPG$")
-  #sali1<-readJPEG(paste(path, files[i]))
-    mean_r<-mean(sali1[1:v, 1:h, 1])
-    kr1<-sali1[1:v, 1:h, 1]
-    kr2<-as.vector(kr1)
-    kurtosis_r<-kurtosis(kr2)
-    skew_r<-skewness(kr2)
-    redsd<-sd(kr2)
+    #paste name of image being processed
+    paste(images[i])
     
-    mean_g<-mean(sali1[1:v, 1:h, 2])
-    kg1<-sali1[1:v, 1:h, 2]
-    kg2<-as.vector(kg1)
-    kurtosis_g<-kurtosis(kg2)
-    skew_g<-skewness(kg2)
-    greensd<-sd(kg2)
+    #read in JPEG
+    temp_jpeg <- readJPEG(images[i])
     
-    mean_b<-mean(sali1[1:v, 1:h, 3])
-    kb1<-sali1[1:v, 1:h, 3]
-    kb2<-as.vector(kb1)
-    kurtosis_b<-kurtosis(kb2)
-    skew_b<-skewness(kb2)
-    bluesd<-sd(kb2)
+    d <- dim(temp_jpeg)
+    vert <- d[1]
+    horiz <- d[2]
     
-    #plot(sali1)
-    cat(files[i], "\n")
-    results <- rbind(results, data.frame(name=files[i], redmean=mean_r, redkurtosis=kurtosis_r, redskew=skew_r, greenmean=mean_g, bluemean=mean_b, redkurt=kurtosis_r, greenkurt=kurtosis_g, bluekurt=kurtosis_b))
+    #don't know what the next line of code does
+    #  file_names <- dir("C:/Users/Tom/Dropbox/Kittiwake remote camera/01-07-2013/aldkitt_", pattern = "^stat[[:digit:]]+_pwg[[:digit:]]+\\.JPG$")
+    
+    #RED
+    temp_r1 <- temp_jpeg[1:vert, 1:horiz, 1]
+    temp_r2 <- as.vector(temp_r1)
+    mean_r <- mean(temp_r2)
+    sd_r <- sd(temp_r2)
+    skew_r <- skewness(temp_r2)
+    kurtosis_r <- kurtosis(temp_r2)
+    
+    
+    #GREEN
+    temp_g1 <- temp_jpeg[1:vert, 1:horiz, 2]
+    temp_g2 <- as.vector(temp_g1)
+    mean_g <- mean(temp_g2)
+    sd_g <- sd(temp_g2)
+    skew_g <- skewness(temp_g2)
+    kurtosis_g <- kurtosis(temp_g2)
+    
+    
+    #BLUE
+    temp_b1 <- temp_jpeg[1:vert, 1:horiz, 3]
+    temp_b2 <- as.vector(temp_b1)
+    mean_b <- mean(temp_b2)
+    sd_b <- sd(temp_b2)
+    skew_b <- skewness(temp_b2)
+    kurtosis_b <- kurtosis(temp_b2)
+    
+    
+    #plot(temp_jpeg)
+    #cat(files[i], "\n")
+    
+    results <- rbind(results, data.frame(name = images[i], 
+                                         red_mean = mean_r, red_sd = sd_r, red_skew = skew_r, 
+                                         red_kurtosis = kurtosis_r, green_mean = mean_g, 
+                                         green_sd = sd_g, green_skew = skew_g,
+                                         green_kurtosis = kurtosis_g, blue_mean = mean_b, 
+                                         blue_sd = sd_b, blue_skew = skew_b, 
+                                         blue_kurtosis = kurtosis_b))
   }
 }
 
 
-name=as.character(), redmean=as.numeric(), redkurtosis=as.numeric(), redskew=as.numeric(), redsd(), greenmean=as.numeric(), greenkurtosis=as.numeric(), greenskew=as.numeric(), greensd(), bluemean=as.numeric(), bluekurtosis=as.numeric(), blueskew=as.numeric(), bluesd())
-
-
 head(results)
-
-write.table(results, "C:/Users/Tom/Documents/Penguin image analysis/RGB paper/SPIGbrgbout.csv", row.names=F, sep=",")
-
-            
-            )
-k<-sali1[1:1536, 1:2048, 1]
-k<-as.vector(k)
+    
+#write.table(results, "C:/Users/Tom/Documents/Penguin image analysis/RGB paper/SPIGbrgbout.csv", row.names=F, sep=",")
+    
+    
+k <- sali1[1:1536, 1:2048, 1]
+k <- as.vector(k)
 kurtosis(k)
 
 kurtosis(sali1[1:1536, 1:2048, 1], na.rm = FALSE)
