@@ -249,7 +249,7 @@ ggplot(m_st_kurtosis, aes(x = name, y = value, group = variable, color = variabl
   geom_line(alpha=0.5) + 
   theme(axis.text.x = element_blank())
 
-
+#need to apply smoothing window and determine when derivative is maximized
 
 
 
