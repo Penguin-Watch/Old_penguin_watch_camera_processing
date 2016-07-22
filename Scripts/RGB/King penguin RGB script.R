@@ -171,12 +171,16 @@ close(pb)
 
 # Write results to file ---------------------------------------------------
 
-write.table(results, "King_RGB", row.names = FALSE, sep = ",")
+setwd(paste0(dir, 'Scripts/RGB'))
+
+write.table(results, "King_RGB.csv", row.names = FALSE, sep = ",")
 
 
 
 
 # Plot summary metrics ----------------------------------------------------
+
+#need to standardize withing each metric - color code by summary metric
 
 head(results)
 m_results <- melt(results, 'name')
