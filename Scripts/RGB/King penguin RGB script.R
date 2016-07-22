@@ -1,58 +1,101 @@
 
 
-install.packages("jpeg", dependencies=TRUE)
-install.packages("moments", dependencies=TRUE)
-install.packages("tools", dependencies=TRUE)
-
-rm(list=ls(all=TRUE))
-
-library(jpeg)
-library(moments)
-library(tools)
 
 
-path = "C:/Users/Tom/Pictures/South 2015/Camera data to check/SPIGacop/"
-maskpath = "G:/Cameras 2015/aYALOa2015a"
+if('pacman' %in% rownames(installed.packages()) == FALSE)
+{
+  install.packages(pacman)
+}
 
-files <- list.files(path)
+pacman::p_load(jpeg, moments, tools)
 
-#if necessary, remove the csv files in this folder.
-files<-files[9:length(files)]
-files<-files[1:8503]
 
-files2<-gsub(".JPG", ".jpg", files)
 
-#setwd("C:/Users/Tom/Dropbox/Kittiwake remote camera/02-07-2013/")
+# Clear environment -------------------------------------------------------
+
+rm(list = ls())
+dev.off()
+
+
+
+# Set WD ------------------------------------------------------------------
+
+osx <- '/Users/caseyyoungflesh/Google Drive/R/pwatch/'
+
+if(Sys.info()[['sysname']] == 'Windows')
+{
+  dir <- win
+}
+if(Sys.info()[['sysname']] == 'Darwin')
+{
+  dir <- osx
+}
+
+
+setwd(paste0(dir, 'Images/GOLDa2016a'))
+
+images <- list.files()
+
+#not needed
+#files2<-gsub(".JPG", ".jpg", files)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#|
+#V
+#Mask
+
 j<-1
-
 nestmask<-c(nestmask1, nestmask2)
-mask1<-readJPEG(paste(maskpath, [j], sep=""), native = FALSE)
+mask1<-readJPEG(paste(maskpath[j], sep=""), native = FALSE)
 
 mask1<-readJPEG("C:/Users/Tom/Dropbox/Kittiwake remote camera/masknest1.JPG")
 mask<-mask1[, , 2]
 #should the mask actually be 1, NA?
 #if so, this will speed computing.
-kittiwakeeg<-readJPEG("C:/Users/Tom/Dropbox/Kittiwake remote camera/02-07-2013/IMAG1643.JPG")
-rkitti<-as.matrix(kittiwakeeg[, , 3])
 
-masked<-as.matrix(rkitti*mask)
-#when you read in, cut out all but the relevant polygon from the image.
+#^
+#|
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+img_jpeg <- readJPEG(images[1])
+img_ch3 <- as.matrix(img_jpeg[, , 3])
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#|
+#V
+#Mask
+#to mask
+#masked <- as.matrix(img*mask)
 
 rmatrix<-mask1[, , 3]
-results = data.frame(name=as.character(), redmean=as.numeric(), redkurtosis=as.numeric(), redskew=as.numeric(), redsd=as.numeric(), greenmean=as.numeric(), greenkurtosis=as.numeric(), greenskew=as.numeric(), greensd=as.numeric(), bluemean=as.numeric(), bluekurtosis=as.numeric(), blueskew=as.numeric(), bluesd=as.numeric())
+#^
+#|
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+
+
+results <- data.frame(name = as.character(), red_mean = as.numeric(), red_kurtosis = as.numeric(), 
+                      red_skew = as.numeric(), red_sd = as.numeric(), green_mean = as.numeric(), 
+                      green_kurtosis = as.numeric(), green_skew = as.numeric(), green_sd = as.numeric(),
+                      blue_mean = as.numeric(), blue_kurtosis = as.numeric(), blue_skew = as.numeric(), 
+                      blue_sd = as.numeric())
+
 
 #take the mean, skew, kurtosis, sd
-
-i<-10
-
-
-for (i in 1:length(files2)) {
-  if (tolower(file_ext(files2[i])) == 'jpg') {
+for (i in 1:length(images)) 
+{
+  i <- 1  
+  
+  
+  if (tolower(file_ext(images[i])) == 'jpg') 
+  {
     paste(path, files2[i])
-    sali1<-readJPEG(paste(path,files2[i], sep=""))
-    d<-dim(sali1)
-    v<-d[1]
-    h<-d[2]
+    sali1 <- readJPEG(paste(path,files2[i], sep=""))
+    d <- dim(sali1)
+    v <- d[1]
+    h <- d[2]
   #  file_names <- dir("C:/Users/Tom/Dropbox/Kittiwake remote camera/01-07-2013/aldkitt_", pattern = "^stat[[:digit:]]+_pwg[[:digit:]]+\\.JPG$")
   #sali1<-readJPEG(paste(path, files[i]))
     mean_r<-mean(sali1[1:v, 1:h, 1])
