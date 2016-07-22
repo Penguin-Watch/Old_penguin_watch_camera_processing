@@ -5,7 +5,7 @@ if('pacman' %in% rownames(installed.packages()) == FALSE)
   install.packages(pacman)
 }
 
-pacman::p_load(jpeg, moments, tools)
+pacman::p_load(jpeg, moments, tools, ggplot2, reshape2)
 
 
 
@@ -71,6 +71,10 @@ rmatrix<-mask1[, , 3]
 
 
 
+
+# Create empty data frame -------------------------------------------------
+
+
 results <- data.frame(name = as.character(), red_mean = as.numeric(), red_sd = as.numeric(),
                       red_skew = as.numeric(), red_kurtosis = as.numeric(), 
                       green_mean = as.numeric(), green_sd = as.numeric(), green_skew = as.numeric(),
@@ -80,15 +84,19 @@ results <- data.frame(name = as.character(), red_mean = as.numeric(), red_sd = a
 
 
 
-#take the mean, skew, kurtosis, sd
+
+# Loop for mean, sd, skew, kurtosis ---------------------------------------
+
+
+pb <- txtProgressBar(min = 1, max = length(images), style = 3)
 for (i in 1:length(images)) 
 {
-  i <- 1  
+  #i <- 1  
   
   if (tolower(file_ext(images[i])) == 'jpg') 
   {
     #paste name of image being processed
-    paste(images[i])
+    #paste(images[i])
     
     #read in JPEG
     temp_jpeg <- readJPEG(images[i])
@@ -138,24 +146,32 @@ for (i in 1:length(images))
                                          blue_sd = sd_b, blue_skew = skew_b, 
                                          blue_kurtosis = kurtosis_b))
   }
+  
+  setTxtProgressBar(pb, i)
 }
+close(pb)
+
 
 
 head(results)
-    
+
+
+
+m_results <- melt(results, 'name')
+ggplot(m_results, aes(x = name, y = value, group = variable, color = variable)) +
+  geom_line() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
 #write.table(results, "C:/Users/Tom/Documents/Penguin image analysis/RGB paper/SPIGbrgbout.csv", row.names=F, sep=",")
-    
-    
+
+
+
+#don't know what this bit is...
 k <- sali1[1:1536, 1:2048, 1]
 k <- as.vector(k)
 kurtosis(k)
 
 kurtosis(sali1[1:1536, 1:2048, 1], na.rm = FALSE)
-require(reshape2)
-require(ggplot2)
-melted <- melt(results, "name")
-ggplot(melted, aes(x=name, y=value, group=variable, color=variable)) + 
-  geom_line() + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
 
 
