@@ -6,6 +6,7 @@
 
 #need to filter out night images and snow images
 #above or below a certain threshold --> need to remove
+#less light is a problem in winter months
 
 
 # Install/load packages --------------------------------------------------------
