@@ -19,12 +19,10 @@ pacman::p_load(jpeg, moments, tools, ggplot2, reshape2)
 
 
 
-
 # Clear environment -------------------------------------------------------
 
 rm(list = ls())
 dev.off()
-
 
 
 
@@ -41,19 +39,6 @@ if(Sys.info()[['sysname']] == 'Darwin')
 {
   dir <- osx
 }
-
-
-
-# Set up  -----------------------------------------------------------------
-
-setwd(paste0(dir, 'Images/GOLDa2016a'))
-
-images <- list.files()
-
-#not needed
-#files2<-gsub(".JPG", ".jpg", files)
-
-
 
 
 
@@ -86,85 +71,111 @@ rmatrix<-mask1[, , 3]
 
 
 
-
-# Create empty data frame -------------------------------------------------
-
-
-results <- data.frame(name = as.character(), red_mean = as.numeric(), red_sd = as.numeric(),
-                      red_skew = as.numeric(), red_kurtosis = as.numeric(), 
-                      green_mean = as.numeric(), green_sd = as.numeric(), green_skew = as.numeric(),
-                      green_kurtosis = as.numeric(), blue_mean = as.numeric(), blue_sd = as.numeric(),
-                      blue_skew = as.numeric(), blue_kurtosis = as.numeric())
+# Function to calc mean, sd, skew, kurtosis -------------------------------
 
 
-
-
-
-# Loop for mean, sd, skew, kurtosis of each image ---------------------------------------
-
-
-pb <- txtProgressBar(min = 1, max = length(images), style = 3)
-for (i in 1:length(images)) 
+#PATH is folder with images
+#WHICH specifies which images - ALL = all images in folder, otherwise specify (e.g., 1:100)
+img_fun <- function(PATH, WHICH = 'ALL')
 {
-  #i <- 1  
   
-  if (tolower(file_ext(images[i])) == 'jpg') 
+  #set wd
+  setwd(paste0(PATH))
+  
+  if(WHICH[1] == 'ALL')
   {
-    #paste name of image being processed
-    #paste(images[i])
-    
-    #read in JPEG
-    temp_jpeg <- readJPEG(images[i])
-    
-    d <- dim(temp_jpeg)
-    vert <- d[1]
-    horiz <- d[2]
-    
-    #don't know what the next line of code does
-    #file_names <- dir("C:/Users/Tom/Dropbox/Kittiwake remote camera/01-07-2013/aldkitt_", pattern = "^stat[[:digit:]]+_pwg[[:digit:]]+\\.JPG$")
-    
-    #RED
-    temp_r1 <- temp_jpeg[1:vert, 1:horiz, 1]
-    temp_r2 <- as.vector(temp_r1)
-    mean_r <- mean(temp_r2)
-    sd_r <- sd(temp_r2)
-    skew_r <- skewness(temp_r2)
-    kurtosis_r <- kurtosis(temp_r2)
-    
-    
-    #GREEN
-    temp_g1 <- temp_jpeg[1:vert, 1:horiz, 2]
-    temp_g2 <- as.vector(temp_g1)
-    mean_g <- mean(temp_g2)
-    sd_g <- sd(temp_g2)
-    skew_g <- skewness(temp_g2)
-    kurtosis_g <- kurtosis(temp_g2)
-    
-    
-    #BLUE
-    temp_b1 <- temp_jpeg[1:vert, 1:horiz, 3]
-    temp_b2 <- as.vector(temp_b1)
-    mean_b <- mean(temp_b2)
-    sd_b <- sd(temp_b2)
-    skew_b <- skewness(temp_b2)
-    kurtosis_b <- kurtosis(temp_b2)
-    
-    
-    #plot(temp_jpeg)
-    #cat(files[i], "\n")
-    
-    results <- rbind(results, data.frame(name = images[i], 
-                                         red_mean = mean_r, red_sd = sd_r, red_skew = skew_r, 
-                                         red_kurtosis = kurtosis_r, green_mean = mean_g, 
-                                         green_sd = sd_g, green_skew = skew_g,
-                                         green_kurtosis = kurtosis_g, blue_mean = mean_b, 
-                                         blue_sd = sd_b, blue_skew = skew_b, 
-                                         blue_kurtosis = kurtosis_b))
+    #files in target location
+    images <- list.files()
+  }else{
+    images <- list.files()[WHICH]
   }
   
-  setTxtProgressBar(pb, i)
+  
+  
+  #create empty matrix
+  results <- matrix(nrow = length(INPUT), ncol= 13)
+
+  #progress bar
+  pb <- txtProgressBar(min = 1, max = length(INPUT), style = 3)
+
+  #loop to calc mean, sd, skew, kurtosis
+  for (i in 1:length(INPUT)) 
+  {
+
+    #check to make sure jpg
+    if (tolower(file_ext(INPUT[i])) == 'jpg') 
+    {
+
+      #read in JPEG
+      temp_jpeg <- readJPEG(INPUT[i])
+
+      d <- dim(temp_jpeg)
+      vert <- d[1]
+      horiz <- d[2]
+
+
+      #name of image in first column of empty matrix
+      results[i,1] <- INPUT[i]
+
+      #RED
+      temp_r1 <- temp_jpeg[1:vert, 1:horiz, 1]
+      temp_r2 <- as.vector(temp_r1)
+      results[i,2] <- mean(temp_r2)
+      results[i,3] <- sd(temp_r2)
+      results[i,4] <- skewness(temp_r2)
+      results[i,5] <- kurtosis(temp_r2)
+
+
+      #GREEN
+      temp_g1 <- temp_jpeg[1:vert, 1:horiz, 2]
+      temp_g2 <- as.vector(temp_g1)
+      results[i,6] <- mean(temp_g2)
+      results[i,7] <- sd(temp_g2)
+      results[i,8] <- skewness(temp_g2)
+      results[i,9] <- kurtosis(temp_g2)
+
+
+      #BLUE
+      temp_b1 <- temp_jpeg[1:vert, 1:horiz, 3]
+      temp_b2 <- as.vector(temp_b1)
+      results[i,10] <- mean(temp_b2)
+      results[i,11] <- sd(temp_b2)
+      results[i,12] <- skewness(temp_b2)
+      results[i,13] <- kurtosis(temp_b2)
+
+      #plot(temp_jpeg)
+      #cat(files[i], "\n")
+
+    }
+
+    setTxtProgressBar(pb, i)
+  }
+  close(pb)
+  
+  
+  OUT <- data.frame(name = results[,1], 
+                    red_mean = results[,2], red_sd = results[,3], 
+                    red_skew = results[,4], red_kurtosis = results[,5], 
+                    green_mean = results[,6], green_sd = results[,7], 
+                    green_skew = results[,8], green_kurtosis = results[,9], 
+                    blue_mean = results[,10], blue_sd = results[,11], 
+                    blue_skew = results[,12], blue_kurtosis = results[,13])
+  
+  
+  return(OUT)
 }
-close(pb)
+
+
+
+
+# Run function ------------------------------------------------------------
+
+path <- paste0(dir, 'Images/GOLDa2016a')
+
+#52 minutes projected for all images
+ptm <- proc.time()
+img_results <- img_fun(PATH = path, WHICH = 1:100)
+proc.time() - ptm
 
 
 
@@ -173,15 +184,35 @@ close(pb)
 
 setwd(paste0(dir, 'Scripts/RGB'))
 
-write.table(results, "King_RGB.csv", row.names = FALSE, sep = ",")
+#write.table(img_results, "King_RGB.csv", row.names = FALSE, sep = ",")
+
+#read csv in
+#img_results <- read.csv('King_RGB.csv')
 
 
 
-# Standardize metrics -----------------------------------------------------
 
-st_results <- apply(results[,-1], 2, function(X){scale(X, scale = FALSE)})
+# Process metrics -----------------------------------------------------
 
-st_res_df <- data.frame(name = results[,1], st_results)
+#standardize 
+st_results <- apply(img_results[,-1], 2, function(X){scale(X, scale = TRUE)})
+
+
+#moving avg function
+ma_fun <- function(x, n= 5, SIDES= 2)
+{
+  OUT <- filter(x, rep(1/n, n), sides= SIDES)
+  
+  return(OUT)
+}
+
+#5 year moving average
+ma_results <- apply(st_results, 2, function(X){ma_fun(X, n = 5)})
+
+#make data frame with image names and standardized, moving average values
+st_res_df <- data.frame(name = img_results[,1], ma_results)
+
+
 
 
 
@@ -228,12 +259,14 @@ ggplot(m_st_mean, aes(x = name, y = value, group = variable, color = variable)) 
   geom_line(alpha=0.5) + 
   theme(axis.text.x = element_blank())
 
+
 #ALL sd
 m_st_sd <- melt(st_res_df[,c(1,3,7,11)], 'name')
 
 ggplot(m_st_sd, aes(x = name, y = value, group = variable, color = variable)) +
   geom_line(alpha=0.5) + 
   theme(axis.text.x = element_blank())
+
 
 #ALL skew
 m_st_skew <- melt(st_res_df[,c(1,4,8,12)], 'name')
@@ -242,6 +275,7 @@ ggplot(m_st_skew, aes(x = name, y = value, group = variable, color = variable)) 
   geom_line(alpha=0.5) + 
   theme(axis.text.x = element_blank())
 
+
 #ALL kurtosis
 m_st_kurtosis <- melt(st_res_df[,c(1,5,9,13)], 'name')
 
@@ -249,7 +283,14 @@ ggplot(m_st_kurtosis, aes(x = name, y = value, group = variable, color = variabl
   geom_line(alpha=0.5) + 
   theme(axis.text.x = element_blank())
 
-#need to apply smoothing window and determine when derivative is maximized
+
+
+
+
+
+
+
+
 
 
 
