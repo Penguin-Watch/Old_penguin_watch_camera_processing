@@ -166,12 +166,12 @@ mask <- paste0('/Users/caseyyoungflesh/Google Drive/R/pwatch/Images/mask_test.jp
 
 #52 minutes projected for all images
 ptm <- proc.time()
-img_results <- img_fun(PATH = path, WHICH = 1:100)
+img_results <- img_fun(PATH = path, WHICH = 'ALL')
 proc.time() - ptm
 
 #slightly longer with masking
 ptm <- proc.time()
-img_results <- img_fun(PATH = path, MASK = mask, WHICH = 1:100)
+img_results <- img_fun(PATH = path, MASK = mask, WHICH = 'ALL')
 proc.time() - ptm
 
 
