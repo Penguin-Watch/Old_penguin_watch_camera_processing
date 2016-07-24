@@ -4,7 +4,8 @@
 #GOLDa 2016a as a test data set for the code
 ###############
 
-
+#need to filter out night images and snow images
+#above or below a certain threshold --> need to remove
 
 
 # Install/load packages --------------------------------------------------------
@@ -162,9 +163,9 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL')
 # Run function ------------------------------------------------------------
 
 path <- paste0(dir, 'Images/GOLDa2016a')
-mask <- paste0('/Users/caseyyoungflesh/Google Drive/R/pwatch/Images/mask_test.jpg') 
+mask <- paste0('/Users/caseyyoungflesh/Google Drive/R/pwatch/Scripts/RGB/mask_test.jpg') 
 
-#52 minutes projected for all images
+#52 minutes processing time
 ptm <- proc.time()
 img_results <- img_fun(PATH = path, WHICH = 'ALL')
 proc.time() - ptm
@@ -178,7 +179,7 @@ proc.time() - ptm
 
 # Write results to file ---------------------------------------------------
 
-setwd(paste0(dir, 'Scripts/RGB'))
+setwd(paste0(dir, 'Output'))
 
 #write.table(img_results, "King_RGB.csv", row.names = FALSE, sep = ",")
 
