@@ -43,45 +43,26 @@ if(Sys.info()[['sysname']] == 'Darwin')
 
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#|
-#V
-#Mask
-
-j<-1
-nestmask<-c(nestmask1, nestmask2)
-mask1<-readJPEG(paste(maskpath[j], sep=""), native = FALSE)
-
-mask1<-readJPEG("C:/Users/Tom/Dropbox/Kittiwake remote camera/masknest1.JPG")
-mask<-mask1[, , 2]
-#should the mask actually be 1, NA?
-#if so, this will speed computing.
-
-#Mask
-#to mask
-#masked <- as.matrix(img*mask)
-
-rmatrix<-mask1[, , 3]
-
-#^
-#|
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
-
-
-
 
 # Function to calc mean, sd, skew, kurtosis -------------------------------
 
 
 #PATH is folder with images
+#MASK is path to mask - MASK should be black where not applicable, white in areas of interest
 #WHICH specifies which images - ALL = all images in folder, otherwise specify (e.g., 1:100)
-img_fun <- function(PATH, WHICH = 'ALL')
+
+img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL')
 {
+
+  #PATH <- paste0(dir, 'Images/GOLDa2016a')
+  #MASK <- paste0('/Users/caseyyoungflesh/Google Drive/R/pwatch/Images/mask_test.jpg')
+  #MASK <- NULL
+  #WHICH <- 1:100
+  
   
   #set wd
   setwd(paste0(PATH))
-  
+
   if(WHICH[1] == 'ALL')
   {
     #files in target location
@@ -89,62 +70,72 @@ img_fun <- function(PATH, WHICH = 'ALL')
   }else{
     images <- list.files()[WHICH]
   }
-  
-  
-  
-  #create empty matrix
-  results <- matrix(nrow = length(INPUT), ncol= 13)
 
+
+
+  #create empty matrix
+  results <- matrix(nrow = length(images), ncol= 12)
+  name_vec <- rep(NA, length(images))
+  
   #progress bar
-  pb <- txtProgressBar(min = 1, max = length(INPUT), style = 3)
+  pb <- txtProgressBar(min = 1, max = length(images), style = 3)
 
   #loop to calc mean, sd, skew, kurtosis
-  for (i in 1:length(INPUT)) 
+  for (i in 1:length(images)) 
   {
 
+    #i <- 1
+    
     #check to make sure jpg
-    if (tolower(file_ext(INPUT[i])) == 'jpg') 
+    if (tolower(file_ext(images[i])) == 'jpg') 
     {
 
       #read in JPEG
-      temp_jpeg <- readJPEG(INPUT[i])
+      temp_img <- readJPEG(images[i])
 
+
+      #apply mask if applicable
+      #all 1s RGB is white, all 0s is black
+      if (is.null(MASK))
+      {
+        temp_jpeg <- temp_img
+      }else{
+        mask <- readJPEG(MASK)
+        temp_jpeg <- as.array(temp_img*mask)
+      }
+
+      
       d <- dim(temp_jpeg)
       vert <- d[1]
       horiz <- d[2]
 
 
       #name of image in first column of empty matrix
-      results[i,1] <- INPUT[i]
+      name_vec[i] <- images[i]
 
+      
       #RED
-      temp_r1 <- temp_jpeg[1:vert, 1:horiz, 1]
-      temp_r2 <- as.vector(temp_r1)
-      results[i,2] <- mean(temp_r2)
-      results[i,3] <- sd(temp_r2)
-      results[i,4] <- skewness(temp_r2)
-      results[i,5] <- kurtosis(temp_r2)
+      temp_r1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 1])
+      results[i,1] <- mean(temp_r1)
+      results[i,2] <- sd(temp_r1)
+      results[i,3] <- skewness(temp_r1)
+      results[i,4] <- kurtosis(temp_r1)
 
 
       #GREEN
-      temp_g1 <- temp_jpeg[1:vert, 1:horiz, 2]
-      temp_g2 <- as.vector(temp_g1)
-      results[i,6] <- mean(temp_g2)
-      results[i,7] <- sd(temp_g2)
-      results[i,8] <- skewness(temp_g2)
-      results[i,9] <- kurtosis(temp_g2)
+      temp_g1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 2])
+      results[i,5] <- mean(temp_g1)
+      results[i,6] <- sd(temp_g1)
+      results[i,7] <- skewness(temp_g1)
+      results[i,8] <- kurtosis(temp_g1)
 
 
       #BLUE
-      temp_b1 <- temp_jpeg[1:vert, 1:horiz, 3]
-      temp_b2 <- as.vector(temp_b1)
-      results[i,10] <- mean(temp_b2)
-      results[i,11] <- sd(temp_b2)
-      results[i,12] <- skewness(temp_b2)
-      results[i,13] <- kurtosis(temp_b2)
-
-      #plot(temp_jpeg)
-      #cat(files[i], "\n")
+      temp_b1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 3])
+      results[i,9] <- mean(temp_b1)
+      results[i,10] <- sd(temp_b1)
+      results[i,11] <- skewness(temp_b1)
+      results[i,12] <- kurtosis(temp_b1)
 
     }
 
@@ -152,14 +143,14 @@ img_fun <- function(PATH, WHICH = 'ALL')
   }
   close(pb)
   
-  
-  OUT <- data.frame(name = results[,1], 
-                    red_mean = results[,2], red_sd = results[,3], 
-                    red_skew = results[,4], red_kurtosis = results[,5], 
-                    green_mean = results[,6], green_sd = results[,7], 
-                    green_skew = results[,8], green_kurtosis = results[,9], 
-                    blue_mean = results[,10], blue_sd = results[,11], 
-                    blue_skew = results[,12], blue_kurtosis = results[,13])
+
+  OUT <- data.frame(name = name_vec, 
+                    red_mean = results[,1], red_sd = results[,2], 
+                    red_skew = results[,3], red_kurtosis = results[,4], 
+                    green_mean = results[,5], green_sd = results[,6], 
+                    green_skew = results[,7], green_kurtosis = results[,8], 
+                    blue_mean = results[,9], blue_sd = results[,10], 
+                    blue_skew = results[,11], blue_kurtosis = results[,12])
   
   
   return(OUT)
@@ -171,12 +162,17 @@ img_fun <- function(PATH, WHICH = 'ALL')
 # Run function ------------------------------------------------------------
 
 path <- paste0(dir, 'Images/GOLDa2016a')
+mask <- paste0('/Users/caseyyoungflesh/Google Drive/R/pwatch/Images/mask_test.jpg') 
 
 #52 minutes projected for all images
 ptm <- proc.time()
 img_results <- img_fun(PATH = path, WHICH = 1:100)
 proc.time() - ptm
 
+#slightly longer with masking
+ptm <- proc.time()
+img_results <- img_fun(PATH = path, MASK = mask, WHICH = 1:100)
+proc.time() - ptm
 
 
 
@@ -211,7 +207,6 @@ ma_results <- apply(st_results, 2, function(X){ma_fun(X, n = 5)})
 
 #make data frame with image names and standardized, moving average values
 st_res_df <- data.frame(name = img_results[,1], ma_results)
-
 
 
 
