@@ -187,12 +187,12 @@ proc.time() - ptm
 
 # Write results to file ---------------------------------------------------
 
-setwd(paste0(dir, 'Data/Data_Output'))
+setwd(paste0(dir, 'Output'))
 
-#write.table(img_results, "King_RGB.csv", row.names = FALSE, sep = ",")
+#write.table(img_results, "GOLDa2016a_RGB.csv", row.names = FALSE, sep = ",")
 
 #read csv in
-#img_results <- read.csv('King_RGB.csv')
+#img_results <- read.csv('GOLDa2016a_RGB.csv')
 
 
 
