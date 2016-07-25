@@ -1,3 +1,2 @@
-*.csv filter=lfs diff=lfs merge=lfs -text
 Data/NEKOc_consensus.csv filter=lfs diff=lfs merge=lfs -text
 Data/NEKOc_non_consensus.csv filter=lfs diff=lfs merge=lfs -text
