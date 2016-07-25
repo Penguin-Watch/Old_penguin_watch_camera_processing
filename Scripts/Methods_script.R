@@ -8,7 +8,6 @@
 #
 ##################
 
-#fix polygon plot
 #feed in master data
 #work on NND
 
@@ -528,15 +527,13 @@ proc.time() - ptm
 #... rev_ortho_fun -> poly_fun -> order_fun -> point_fun -> ts_fun 
 
 
-
-poly_fun <- function(KM_REV_ORTHO)
-master_fun <- function(input, obl)
+master_fun <- function(input, nests, obl, d_thr, cores, iters)
 {
 
   #input <- NEKO_con_data
+  #nests <- 26
   #obl<- 150
   #d_thr <- 0.25
-  #nests <- 
   #cores <- 1
   #iters <- 2000
   
@@ -552,11 +549,34 @@ master_fun <- function(input, obl)
   
   t_km_rev_ortho <- rev_ortho_fun(KM_OUT = t_km_out, 
                                   POST_ORTHO = t_post_ortho)
-  temp6 <- poly_fun(KM_REV_ORTHO = t_km_rev_ortho)
-  temp7 <- order_fun()
-  temp8 <- point_fun()
-  temp9 <- ts_fun()
+  
+  t_poly_out <- poly_fun(KM_REV_ORTHO = t_km_rev_ortho)
+  
+  t_order_out <- order_fun(POST_NND = input)
+  
+  t_point_out <- point_fun(POLY = t_poly_out, ORDER_OUT = t_order_out)
+  
+  OUT <- ts_fun(POINT_FUN_OUT = t_point_out)
+  
+  return(OUT)
 }
+
+
+
+
+ptm <- proc.time()
+master_OUT <- master_fun(input = NEKO_con_data,
+                         nests = 26, 
+                         obl = 150, 
+                         d_thr = 0.25,
+                         cores = 2,
+                         iters = 2000)
+proc.time() - ptm
+
+
+
+
+
 
 
 
