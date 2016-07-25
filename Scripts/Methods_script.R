@@ -259,7 +259,7 @@ proc.time() - ptm
 #...sure cluster centers are determined correctly. 2million seems alright her
 #return nest centers in original coordinate system
 
-km_fun <- function(FILTER_OUT, NESTS, CORES, ITERS = 2000000)
+km_fun <- function(FILTER_OUT, NESTS, CORES = 1, ITERS = 2000000)
 {
   #FILTER_OUT <- filter_out
   #ITERS = 2000
@@ -308,7 +308,7 @@ proc.time() - ptm
 
 # reverse ortho on nest centers -------------------------------------------
 
-#Function to reverse transform for orthorectified to original - 1000 x 750
+#Function to reverse transform for orthorectified to normal 1000 x 750 coords
 
 rev_ortho_fun <- function(KM_OUT, POST_ORTHO)
 {
@@ -337,7 +337,7 @@ rev_ortho_fun <- function(KM_OUT, POST_ORTHO)
   out1_x <- XVAL/(out1_y + OBL)
   
   #transform back to original coords
-  orig_y <- (750 - (YVAL/(out1_y + OBL)))
+  orig_y <- (YVAL/(out1_y + OBL))
   orig_x <- ((XVAL/(out1_y + OBL)) + x_center)
   
   #out object
@@ -529,6 +529,34 @@ proc.time() - ptm
 
 
 
+poly_fun <- function(KM_REV_ORTHO)
+master_fun <- function(input, obl)
+{
+
+  #input <- NEKO_con_data
+  #obl<- 150
+  #d_thr <- 0.25
+  #nests <- 
+  #cores <- 1
+  #iters <- 2000
+  
+  t_post_ortho <- ortho_fun(IN= input, OBL= obl)
+  
+  t_den_out <- den_fun(POST_ORTHO = t_post_ortho)
+  
+  t_filter_out <- filter_fun(DEN_OUT = t_den_out, 
+                      POST_ORTHO = t_post_ortho, D_THR = d_thr)
+  
+  t_km_out <- km_fun(FILTER_OUT = t_filter_out, NESTS = nests,
+                     CORES = cores, ITERS = iters)
+  
+  t_km_rev_ortho <- rev_ortho_fun(KM_OUT = t_km_out, 
+                                  POST_ORTHO = t_post_ortho)
+  temp6 <- poly_fun(KM_REV_ORTHO = t_km_rev_ortho)
+  temp7 <- order_fun()
+  temp8 <- point_fun()
+  temp9 <- ts_fun()
+}
 
 
 
@@ -669,12 +697,12 @@ image.scale <- function(z, zlim, col = rainbow(20), breaks, horiz=TRUE, ylim=NUL
 }
 
 #TAKES SOME TIME TO PLOT
-layout(matrix(c(1,2), nrow=2, ncol=1), heights=c(4,1))
-layout.show(2)
-par(mar=c(1,1,1,1))
-image(s2_s, col=rainbow(20), xaxt= 'n', yaxt= 'n')
-par(mar=c(3,1,1,1))
-image.scale(s2_s$z)
+#layout(matrix(c(1,2), nrow=2, ncol=1), heights=c(4,1))
+#layout.show(2)
+#par(mar=c(1,1,1,1))
+#image(s2_s, col=rainbow(20), xaxt= 'n', yaxt= 'n')
+#par(mar=c(3,1,1,1))
+#image.scale(s2_s$z)
 
 
 
@@ -688,9 +716,8 @@ plot(filter_out[,1], filter_out[,2], pch='.')
 
 
 # plot filtered clicks with nest centers ----------------------------------
-####PROBLEM HERE
 btrans_pts <- rev_ortho_fun(km_out, post_ortho)
-#shouldn't need to cam_trans here - rev ortho shouldn't invert y-axis
+#transform from 1000 x 750 to 2048 x 1536
 nest_cam_bt <- cam_trans(btrans_pts, INVERT = FALSE)
 
 #filtered clicks in high density area with nest centers
@@ -709,13 +736,15 @@ points(nest_cam_bt, col= gg_color_hue(26), pch= 19)
 
 # Image with all clicks and nest centers ----------------------------------
 
-trans_order <- cam_trans(order_out[,2:3])
+trans_order <- cam_trans(order_out[,2:3], INVERT = FALSE)
 
 plot_jpeg(img_to_plot)
+#clicks
 points(trans_order[,1], trans_order[,2], col=rgb(.3,.6,.3, alpha=.5), pch='.')
+#nest centers
 points(nest_cam_bt, col= gg_color_hue(26), pch= 19)
 
-plot(trans_order, pch='.')
+
 
 # Add nest numbers to plot ------------------------------------------------
 
@@ -726,8 +755,14 @@ text(nest_cam_bt, labels=paste(1:26), col= 'white', cex = 1.2)
 
 # Add polygons ------------------------------------------------------------
 
+
+#Transform polygons frmo 1000 x 750 to 2048 x 1536 
 #Plot polygons on image
 for (i in 1:length(poly_out))
 {
-  polygon(poly_out[[i]], lwd=3)
+  polygon(cam_trans(poly_out[[i]], INVERT = FALSE), lwd=3)
 }
+
+
+
+
