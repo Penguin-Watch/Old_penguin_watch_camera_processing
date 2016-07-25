@@ -4,6 +4,12 @@
 #GOLDa 2016a as a test data set for the code
 ###############
 
+#TO DOS
+#pick out dark and snowy images
+#find where change point happens in time series
+#fix moving avg
+
+#In order to:
 #need to filter out night images and snow images
 #above or below a certain threshold --> need to remove
 #less light is a problem in winter months
@@ -104,6 +110,7 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL')
       }else{
         mask <- readJPEG(MASK)
         temp_jpeg <- as.array(temp_img*mask)
+        #make sure this is transformed to NA
       }
 
       
@@ -180,13 +187,12 @@ proc.time() - ptm
 
 # Write results to file ---------------------------------------------------
 
-setwd(paste0(dir, 'Output'))
+setwd(paste0(dir, 'Data/Data_Output'))
 
 #write.table(img_results, "King_RGB.csv", row.names = FALSE, sep = ",")
 
 #read csv in
 #img_results <- read.csv('King_RGB.csv')
-
 
 
 
@@ -208,9 +214,9 @@ ma_fun <- function(x, n= 5, SIDES= 2)
 ma_results <- apply(st_results, 2, function(X){ma_fun(X, n = 5)})
 
 #make data frame with image names and standardized, moving average values
-st_res_df <- data.frame(name = img_results[,1], ma_results)
+#st_res_df <- data.frame(name = img_results[,1], ma_results)
 
-
+st_res_df <- data.frame(name = img_results[,1], st_results)
 
 
 

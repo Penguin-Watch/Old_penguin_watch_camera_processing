@@ -9,7 +9,18 @@
 ##################
 
 #feed in master data
-#work on NND
+#work on NND for initial grep
+
+#ADPE cams
+#YALOa (3? seasons) - likely YALO and PETE together for methods paper
+#PETEd (3 seasons)
+#Hinke (2 cams, 1 season)
+#SSSIc (1 incomplete season)
+
+#NOs
+#Aussies (need to ask permission)
+#HERO (don't have now)
+
 
 
 #post-zooniverse:
@@ -82,7 +93,7 @@ if(Sys.info()[['sysname']] == 'Darwin')
 #OBL is obliqueness of camera (how much to ortho)
 
 #grep -> NND -> grep -> ortho_fun -> den_fun -> filter_fun -> km_fun ->
-#... rev_ortho_fun -> order_fun -> poly_fun -> point_fun -> ts_fun
+#... rev_ortho_fun -> poly_fun -> order_fun-> point_fun -> ts_fun
 
 
 # Load/process data -------------------------------------------------------
@@ -532,7 +543,7 @@ master_fun <- function(input, nests, obl, d_thr, cores, iters)
 
   #input <- NEKO_con_data
   #nests <- 26
-  #obl<- 150
+  #obl <- 150
   #d_thr <- 0.25
   #cores <- 1
   #iters <- 2000
