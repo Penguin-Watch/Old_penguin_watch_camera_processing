@@ -10,7 +10,7 @@
 
 #fix polygon plot
 #feed in master data
-
+#work on NND
 
 
 #post-zooniverse:
@@ -355,50 +355,6 @@ proc.time() - ptm
 
 
 
-# Data for time series creation --------------------------------------------
-
-
-#post NND data, post grep for site - images of interest
-#chronological order - likely needs to be updated using metadata
-
-
-order_fun <- function(POST_NND)
-{
-  
-  #POST_NND <- NEKO_con_data
-  
-  #Arrange data by image # (time)
-  #get jpg number from path name and sort
-  data_order <- order(substr(POST_NND$path, start=18, stop=23))
-  image_names <- POST_NND$path[data_order]
-
-  x.pt <- (POST_NND$x[data_order])
-  y.pt <- (750 - (POST_NND$y[data_order]))
-
-  #zooniverse consensus click data - sorted in chronological order
-  click.dat <- data.frame(IMG= image_names, X= x.pt, Y= y.pt)
-
-  #remove erroneous clicks outside of defined region
-  to_rm <- which(click.dat$X > 1000 | click.dat$X < 0 | click.dat$Y < 0 | click.dat$Y > 750)
-
-  #remove erroneous clicks
-  if(length(to_rm) > 0)
-  {
-    OUT <- click.dat[-to_rm,]
-  }else{
-    OUT <- click.dat
-  }
-  
-  return(OUT)
-}
-
-ptm <- proc.time()
-order_out <- order_fun(NEKO_con_data)
-proc.time() - ptm
-
-
-
-
 # Tesselation ----------------------------------------
 
 #Tests each click location to determine which nest it is located in
@@ -432,6 +388,50 @@ poly_fun <- function(KM_REV_ORTHO)
 
 ptm <- proc.time()
 poly_out <- poly_fun(km_rev_ortho)
+proc.time() - ptm
+
+
+
+
+# Data for time series creation --------------------------------------------
+
+
+#post NND data, post grep for site - images of interest
+#chronological order - likely needs to be updated using metadata
+
+
+order_fun <- function(POST_NND)
+{
+  
+  #POST_NND <- NEKO_con_data
+  
+  #Arrange data by image # (time)
+  #get jpg number from path name and sort
+  data_order <- order(substr(POST_NND$path, start=18, stop=23))
+  image_names <- POST_NND$path[data_order]
+  
+  x.pt <- (POST_NND$x[data_order])
+  y.pt <- (750 - (POST_NND$y[data_order]))
+  
+  #zooniverse consensus click data - sorted in chronological order
+  click.dat <- data.frame(IMG= image_names, X= x.pt, Y= y.pt)
+  
+  #remove erroneous clicks outside of defined region
+  to_rm <- which(click.dat$X > 1000 | click.dat$X < 0 | click.dat$Y < 0 | click.dat$Y > 750)
+  
+  #remove erroneous clicks
+  if(length(to_rm) > 0)
+  {
+    OUT <- click.dat[-to_rm,]
+  }else{
+    OUT <- click.dat
+  }
+  
+  return(OUT)
+}
+
+ptm <- proc.time()
+order_out <- order_fun(NEKO_con_data)
 proc.time() - ptm
 
 
@@ -522,8 +522,25 @@ proc.time() - ptm
 
 
 
+# Master function ---------------------------------------------------------
+
+#grep -> NND -> grep -> ortho_fun -> den_fun -> filter_fun -> km_fun ->
+#... rev_ortho_fun -> poly_fun -> order_fun -> point_fun -> ts_fun 
+
+
+
+
+
+
+
 
 # PLOTTING ----------------------------------------------------------------
+
+#all points are done in 1000 x 750 resolution
+#jpegs are plotted in 2048 x 1536 resolution and inverted y-axis
+
+#cam_trans function to scale and invert if necessary
+
 
 
 #to plot camera images
@@ -563,12 +580,18 @@ gg_color_hue <- function(n, OUT = 'HEX')
 
 
 #function to scale points from zooniverse dimensions (1000 x 750) to camera image dimension (2048 x 1536)
-#zooniverse uses scaling factor of 2.048
 #first column must be x coords, second column y coords
-cam_trans <- function(input)
+cam_trans <- function(input, INVERT = FALSE)
 {
+  
   temp_x <- input[,1] * 2.048
-  temp_y <- 1536 - (input[,2] * 2.048)
+  
+  if(INVERT == TRUE)
+  {
+    temp_y <- 1536 - (input[,2] * 2.048)
+  }else{
+    temp_y <- input[,2] * 2.048
+  }
   
   OUT <- cbind(temp_x, temp_y)
   return(OUT)
@@ -589,7 +612,8 @@ img_to_plot <- paste0(substr(unique_images[i], 7,27), '.JPG')
 plot_jpeg(img_to_plot)
 
 #plot all consensus clicks for NEKOc_2013
-tp <- cam_trans(cbind(NEKO_con_data$x, NEKO_con_data$y))
+#invert y-axis because these are original zoo input clicks
+tp <- cam_trans(cbind(NEKO_con_data$x, NEKO_con_data$y), INVERT = TRUE)
 points(tp[,1], tp[,2], pch='.', col=rgb(.3,.8,.3, alpha=.3))
 
 
@@ -603,7 +627,7 @@ plot(post_ortho$x, post_ortho$y, pch='.')
 # density plots ------------------------------------------------------------
 
 #takes time
-contour(den_out)
+#contour(den_out)
 
 #function to add legend to density plot heat map
 #from: http://menugget.blogspot.com/2011/08/adding-scale-to-image-plot.html#more
@@ -661,13 +685,13 @@ plot(filter_out[,1], filter_out[,2], pch='.')
 
 
 
-#fix dimension/plotting issue
 
 
 # plot filtered clicks with nest centers ----------------------------------
-
+####PROBLEM HERE
 btrans_pts <- rev_ortho_fun(km_out, post_ortho)
-nest_cam_bt <- cam_trans(btrans_pts)
+#shouldn't need to cam_trans here - rev ortho shouldn't invert y-axis
+nest_cam_bt <- cam_trans(btrans_pts, INVERT = FALSE)
 
 #filtered clicks in high density area with nest centers
 plot(filter_out[,1], filter_out[,2], pch='.')
@@ -685,11 +709,13 @@ points(nest_cam_bt, col= gg_color_hue(26), pch= 19)
 
 # Image with all clicks and nest centers ----------------------------------
 
+trans_order <- cam_trans(order_out[,2:3])
+
 plot_jpeg(img_to_plot)
-points(order_out[,2], order_out[,3], col=rgb(.3,.6,.3, alpha=.5), pch='.')
+points(trans_order[,1], trans_order[,2], col=rgb(.3,.6,.3, alpha=.5), pch='.')
 points(nest_cam_bt, col= gg_color_hue(26), pch= 19)
 
-
+plot(trans_order, pch='.')
 
 # Add nest numbers to plot ------------------------------------------------
 
