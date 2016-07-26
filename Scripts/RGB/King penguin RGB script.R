@@ -80,80 +80,83 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL')
   }
 
 
-
-  #create empty matrix
-  results <- matrix(nrow = length(images), ncol= 12)
-  name_vec <- rep(NA, length(images))
   
-  #progress bar
-  pb <- txtProgressBar(min = 1, max = length(images), style = 3)
-
-  #loop to calc mean, sd, skew, kurtosis
-  for (i in 1:length(images)) 
+  
+  int_fun <- function(IMG_IN)
   {
+    #create empty matrix
+    results <- matrix(nrow = length(IMG_IN), ncol= 12)
+    name_vec <- rep(NA, length(IMG_IN))
+  
+    #progress bar
+    pb <- txtProgressBar(min = 1, max = length(IMG_IN), style = 3)
 
-    #i <- 1
-    
-    #check to make sure jpg
-    if (tolower(file_ext(images[i])) == 'jpg') 
+    #loop to calc mean, sd, skew, kurtosis
+    for (i in 1:length(IMG_IN)) 
     {
 
-      #read in JPEG
-      temp_img <- readJPEG(images[i])
-
-
-      #apply mask if applicable
-      #all 1s RGB is white, all 0s is black
-      if (is.null(MASK))
+      #i <- 1
+    
+      #check to make sure jpg
+      if (tolower(file_ext(IMG_IN[i])) == 'jpg') 
       {
-        temp_jpeg <- temp_img
-      }else{
-        mask <- readJPEG(MASK)
-        temp_jpeg <- as.array(temp_img*mask)
-        #make sure this is transformed to NA
+
+        #read in JPEG
+        temp_img <- readJPEG(IMG_IN[i])
+
+
+        #apply mask if applicable
+        #all 1s RGB is white, all 0s is black
+        if (is.null(MASK))
+        {
+          temp_jpeg <- temp_img
+        }else{
+          mask <- readJPEG(MASK)
+          temp_jpeg <- as.array(temp_img*mask)
+          #make sure this is transformed to NA
+        }
+
+      
+        d <- dim(temp_jpeg)
+        vert <- d[1]
+        horiz <- d[2]
+
+
+        #name of image in first column of empty matrix
+        name_vec[i] <- IMG_IN[i]
+
+      
+        #RED
+        temp_r1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 1])
+        results[i,1] <- mean(temp_r1)
+        results[i,2] <- sd(temp_r1)
+        results[i,3] <- skewness(temp_r1)
+        results[i,4] <- kurtosis(temp_r1)
+
+
+        #GREEN
+        temp_g1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 2])
+        results[i,5] <- mean(temp_g1)
+        results[i,6] <- sd(temp_g1)
+        results[i,7] <- skewness(temp_g1)
+        results[i,8] <- kurtosis(temp_g1)
+
+
+        #BLUE
+        temp_b1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 3])
+        results[i,9] <- mean(temp_b1)
+        results[i,10] <- sd(temp_b1)
+        results[i,11] <- skewness(temp_b1)
+        results[i,12] <- kurtosis(temp_b1)
+
       }
 
-      
-      d <- dim(temp_jpeg)
-      vert <- d[1]
-      horiz <- d[2]
-
-
-      #name of image in first column of empty matrix
-      name_vec[i] <- images[i]
-
-      
-      #RED
-      temp_r1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 1])
-      results[i,1] <- mean(temp_r1)
-      results[i,2] <- sd(temp_r1)
-      results[i,3] <- skewness(temp_r1)
-      results[i,4] <- kurtosis(temp_r1)
-
-
-      #GREEN
-      temp_g1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 2])
-      results[i,5] <- mean(temp_g1)
-      results[i,6] <- sd(temp_g1)
-      results[i,7] <- skewness(temp_g1)
-      results[i,8] <- kurtosis(temp_g1)
-
-
-      #BLUE
-      temp_b1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 3])
-      results[i,9] <- mean(temp_b1)
-      results[i,10] <- sd(temp_b1)
-      results[i,11] <- skewness(temp_b1)
-      results[i,12] <- kurtosis(temp_b1)
-
+      setTxtProgressBar(pb, i)
     }
-
-    setTxtProgressBar(pb, i)
-  }
-  close(pb)
+    close(pb)
   
 
-  OUT <- data.frame(name = name_vec, 
+    OUT <- data.frame(name = name_vec, 
                     red_mean = results[,1], red_sd = results[,2], 
                     red_skew = results[,3], red_kurtosis = results[,4], 
                     green_mean = results[,5], green_sd = results[,6], 
@@ -162,8 +165,23 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL')
                     blue_skew = results[,11], blue_kurtosis = results[,12])
   
   
-  return(OUT)
+    return(OUT)
+  }
+  
+  
+  cores <- 2
+  chop <- IN/cores
+  
+  
+  test <- images[1:5]
+  test2 <- images[6:10]
+  
+  VEC <- c(test, test2)
+  
+  int_fun()
+  res <- mclapply(VEC, FUN = int_fun)
 }
+
 
 
 
