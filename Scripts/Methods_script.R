@@ -571,7 +571,7 @@ proc.time() - ptm
 #... rev_ortho_fun -> poly_fun -> order_fun -> point_fun -> ts_fun 
 
 
-master_fun <- function(input, nests, obl, d_thr, cores, iters)
+master_fun <- function(input, nests, obl, d_thr = 0.25, cores = 1, iters = 2e6)
 {
 
   #input <- NEKO_con_data
