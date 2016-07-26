@@ -13,7 +13,8 @@
 #grep site of interest
 #NND to determine nest and creche time
 #grep images of interest to run through processing pipeline
-
+#NOTE: function might not run on windows, as it uses mcapply() which
+#...doesn't work on windows (fine for anything but windows)
 
 
 #DATA FOR ANALYSIS
@@ -316,8 +317,8 @@ km_fun <- function(FILTER_OUT, NESTS, CORES = 1, ITERS = 2000000)
     kmeans(DATA, NESTS, nstart= i, iter.max= 1000000000, algorithm = 'Hartigan-Wong')
   }
 
-
-  PER_CORE <- ITERS/CORES
+  
+  PER_CORE <- round(ITERS/CORES)
   VEC <- rep(PER_CORE, CORES)
   
   
