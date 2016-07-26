@@ -1,7 +1,8 @@
 ###############
 #Script to calculate mean, sd, skew, kurtosis of King Penguin images
 #
-#GOLDa 2016a as a test data set for the code
+#Input path with images
+#Output metrics for each image
 ###############
 
 #TO DOS
@@ -58,8 +59,10 @@ if(Sys.info()[['sysname']] == 'Darwin')
 #PATH is folder with images
 #MASK is path to mask - MASK should be black where not applicable, white in areas of interest
 #WHICH specifies which images - ALL = all images in folder, otherwise specify (e.g., 1:100)
+#CORES is number of cores if want to run parallelized
+#NOTE: no progress bar when parallelized; CANNOT RUN IN PARALLEL IN WINDOWS
 
-img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL')
+img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
 {
 
   #PATH <- paste0(dir, 'Images/GOLDa2016a')
@@ -79,11 +82,14 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL')
     images <- list.files()[WHICH]
   }
 
-
   
   
+  #function to calculate metrics - needed for mclapply
   int_fun <- function(IMG_IN)
   {
+    
+    tMASK <- MASK
+    
     #create empty matrix
     results <- matrix(nrow = length(IMG_IN), ncol= 12)
     name_vec <- rep(NA, length(IMG_IN))
@@ -107,11 +113,11 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL')
 
         #apply mask if applicable
         #all 1s RGB is white, all 0s is black
-        if (is.null(MASK))
+        if (is.null(tMASK))
         {
           temp_jpeg <- temp_img
         }else{
-          mask <- readJPEG(MASK)
+          mask <- readJPEG(tMASK)
           temp_jpeg <- as.array(temp_img*mask)
           #make sure this is transformed to NA
         }
@@ -169,21 +175,54 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL')
   }
   
   
-  cores <- 2
-  chop <- IN/cores
+  
+  #if cores is 1, run in serial
+  #if > 1, run using mclappy - doesn't have progres bar when parallelized
+  if (CORES == 1)
+  {
+    
+    M_OUT <- int_fun(images)
+    
+  }else{
+    
+    #length of sements
+    l_segs <- ceiling(length(images)/CORES)
+    
+    sp <- seq(from= 1, to= length(images), by= l_segs)
+    
+    #add first sequence to list
+    n_ol <- images[sp[1]:sp[2]]
+    TL <- list(n_ol)
+    #run loop for rest of sequences in list
+    for (j in 2:CORES)
+    {
+      #j <- 3
+      if(j < CORES)
+      {
+        n_temp <- images[(sp[j]+1):sp[j+1]]
+      }else{
+        #needed if number of images not evenly divisable by CORES
+        n_temp <- images[(sp[j]+1):length(images)]
+      }
+      TL <- c(TL, list(n_temp))
+    }
+  
+    #run function parallelized
+    res <- mclapply(TL, FUN = int_fun)
+    
+    #bind results from different cores together
+    M_OUT <- do.call(rbind, res)
+    
+  }
   
   
-  test <- images[1:5]
-  test2 <- images[6:10]
-  
-  VEC <- c(test, test2)
-  
-  int_fun()
-  res <- mclapply(VEC, FUN = int_fun)
+  return(M_OUT)
 }
 
 
 
+#test parallel
+#test <- img_fun(PATH = path, WHICH = 1:21, CORES = 2)
 
 
 # Run function ------------------------------------------------------------
