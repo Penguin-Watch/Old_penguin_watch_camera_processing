@@ -8,9 +8,15 @@
 #
 ##################
 
-#feed in master data
-#work on NND for initial grep
+#TO DO
+#add master data input
+#grep site of interest
+#NND to determine nest and creche time
+#grep images of interest to run through processing pipeline
 
+
+
+#DATA FOR ANALYSIS
 #ADPE cams
 #YALOa (3? seasons) - likely YALO and PETE together for methods paper
 #PETEd (3 seasons)
@@ -23,7 +29,7 @@
 
 
 
-#post-zooniverse:
+#post-zooniverse processing:
 #1) zoo out consensus data
 #2) grep one site at a time
 #3) calculate NND to determine correct time to look at nests
@@ -31,21 +37,10 @@
 #5) orthorectify image (with scalar)
 #6) density threshold
 #7) filter for points only in high density areas
-#8) click tool - human specifies nest with high density clicks overlaid on image
-#9) run tesselation on nests specified in Step 7
+#8) kmeans/click tool to determine nest ceners
+#9) run tesselation on nests specified in Step 8
 #10) create time series for each nest using consensus data
 
-
-#methods script:
-#as before
-#remove all extraneous functions/plotting
-#set up so that points that have been density thresholded are transformed to non-ortho to 
-#...overlay on image for human nest detection
-
-#long term script:
-#change so that only points in high density areas are shown and then overlaid on plot
-#develop tool so that user can then click on nests to specify location with high click density overlaid
-#nest locations will be used to create tesselation and create time series for nests
 
 
 # Load packages -----------------------------------------------------------
@@ -84,16 +79,6 @@ if(Sys.info()[['sysname']] == 'Darwin')
 
 
 
-# TOP FUNCTION --------------------------------------------------------
-
-#function(DATA_IN, SITE, DEN, OBL, NESTS)
-#DATA_IN is zoo consensus
-#SITE is site to grep
-#DEN is density threshold
-#OBL is obliqueness of camera (how much to ortho)
-
-#grep -> NND -> grep -> ortho_fun -> den_fun -> filter_fun -> km_fun ->
-#... rev_ortho_fun -> poly_fun -> order_fun-> point_fun -> ts_fun
 
 
 # Load/process data -------------------------------------------------------
@@ -157,6 +142,7 @@ plot(OUT$KURT, type='l')
 #change in mean NND over time
 #or
 #change in distance 
+
 
 
 
