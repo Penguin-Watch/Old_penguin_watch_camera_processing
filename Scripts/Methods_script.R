@@ -114,6 +114,52 @@ NEKO_con_data <- NEKO_con_data_imp[grep('NEKOc2013', NEKO_con_data_imp$path),c(1
 colnames(NEKO_con_data) <- c('ID', 'ZOOID', 'path', 'x', 'y')
 
 
+
+
+# Nearest Neighbor --------------------------------------------------------
+
+
+require(spatstat)
+require(moments)
+tdat <- NEKO_con_data[,3:5]
+head(tdat, n= 100)
+
+images <- unique(tdat$path)
+#image 1 clicks
+plot(img_1[,2:3], pch=19)
+
+#loop through images and find mean, sd, skew, kurt of NND for each image
+OUT <- c()
+for (i in 1:length(images))
+{
+  #i <- 1
+  temp <- filter(tdat, path == images[i])
+  NND <- nndist(temp)
+  temp_mean <- mean(NND)
+  temp_sd <- sd(NND)
+  temp_sk <- skewness(NND)
+  temp_kurt <- kurtosis(NND)
+  
+  TOUT <- data.frame(img= images[i], MN= temp_mean, SD= temp_sd, 
+                     SKEW= temp_sk, KURT= temp_kurt) 
+  
+  OUT <- rbind(OUT, TOUT)
+}
+
+
+
+plot(OUT$MN, type='l')
+plot(OUT$SD, type='l')
+plot(OUT$SKEW, type='l')
+plot(OUT$KURT, type='l')
+
+
+#change in mean NND over time
+#or
+#change in distance 
+
+
+
 # Orthorectification ------------------------------------------------------
 
 #due to oblique angle of camera, image needs to be altered to correctly determine click density
