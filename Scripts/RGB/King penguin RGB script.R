@@ -23,7 +23,7 @@ if('pacman' %in% rownames(installed.packages()) == FALSE)
   install.packages(pacman)
 }
 
-pacman::p_load(jpeg, moments, tools, ggplot2, reshape2)
+pacman::p_load(jpeg, moments, tools, ggplot2, reshape2, parallel)
 
 
 
@@ -228,10 +228,6 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
 
 
 
-#test parallel
-#test <- img_fun(PATH = path, WHICH = 1:21, CORES = 2)
-
-
 # Run function ------------------------------------------------------------
 
 path <- paste0(dir, 'Images/GOLDa2016a')
@@ -239,7 +235,7 @@ mask <- paste0('/Users/caseyyoungflesh/Google Drive/R/pwatch/Scripts/RGB/mask_te
 
 #52 minutes processing time
 ptm <- proc.time()
-img_results <- img_fun(PATH = path, WHICH = 'ALL')
+img_results <- img_fun(PATH = path, WHICH = 1:50, CORES = 2)
 proc.time() - ptm
 
 #slightly longer with masking
@@ -269,7 +265,7 @@ st_results <- apply(img_results[,-1], 2, function(X){scale(X, scale = TRUE)})
 #moving avg function
 ma_fun <- function(x, n= 5, SIDES= 2)
 {
-  OUT <- filter(x, rep(1/n, n), sides= SIDES)
+  OUT <- stats::filter(x, rep(1/n, n), sides= SIDES)
   
   return(OUT)
 }
@@ -278,9 +274,10 @@ ma_fun <- function(x, n= 5, SIDES= 2)
 ma_results <- apply(st_results, 2, function(X){ma_fun(X, n = 5)})
 
 #make data frame with image names and standardized, moving average values
-#st_res_df <- data.frame(name = img_results[,1], ma_results)
+st_res_df <- data.frame(name = img_results[,1], ma_results)
 
-st_res_df <- data.frame(name = img_results[,1], st_results)
+
+
 
 
 
