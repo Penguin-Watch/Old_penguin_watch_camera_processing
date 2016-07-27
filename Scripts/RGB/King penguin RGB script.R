@@ -70,6 +70,13 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
   #MASK <- NULL
   #WHICH <- 1:100
   
+  ncore <- detectCores()
+  
+  if(CORES > ncore)
+  {
+    stop("You don't have that many cores on your machine, dummy!")
+  }
+  
   
   #set wd
   setwd(paste0(PATH))
