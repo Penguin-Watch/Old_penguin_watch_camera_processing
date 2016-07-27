@@ -19,8 +19,8 @@
 
 #DATA FOR ANALYSIS
 #ADPE cams
-#YALOa (3? seasons) - likely YALO and PETE together for methods paper
-#PETEd (3 seasons)
+#X----YALOa (3? seasons) - likely YALO and PETE together for methods paper
+#X----PETEd (3 seasons)
 #Hinke (2 cams, 1 season)
 #SSSIc (1 incomplete season)
 
@@ -67,7 +67,7 @@ dev.off()
 # Set WD ------------------------------------------------------------------
 
 osx <- '/Users/caseyyoungflesh/Google Drive/R/pwatch/'
-win <- 'C:/Users/Lynch Lab 7/Google Drive/R/Camera trap - mark recapture/'
+win <- 'C:/Users/Lynch Lab 7/Google Drive/R/pwatch/'
 
 if(Sys.info()[['sysname']] == 'Windows')
 {
@@ -90,6 +90,10 @@ if(Sys.info()[['sysname']] == 'Darwin')
 
 
 setwd(paste0(dir, 'Data'))
+
+
+
+#read in large data with fread into data.table
 
 #import NEKOc data
 NEKO_con_data_imp <- read.csv('NEKOc_consensus.csv', header=TRUE) 
