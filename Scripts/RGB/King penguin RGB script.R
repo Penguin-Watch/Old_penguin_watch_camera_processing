@@ -227,20 +227,35 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
 
 
 
+
+
 # Run function ------------------------------------------------------------
 
-path <- paste0(dir, 'Images/GOLDa2016a')
-mask <- paste0('/Users/caseyyoungflesh/Google Drive/R/pwatch/Scripts/RGB/mask_test.jpg') 
 
-#52 minutes processing time
+#SALIa2015
+path_SALIa2015 <- paste0(dir, 'Images/King_imagery/SALIa2015')
+
 ptm <- proc.time()
-img_results <- img_fun(PATH = path, WHICH = 1:50, CORES = 2)
+SALIa2015 <- img_fun(PATH = path_SALIa2015, WHICH = 'ALL', CORES = 2)
 proc.time() - ptm
 
-#slightly longer with masking
+
+#SALIa2016a
+path_SALIa2016a <- paste0(dir, 'Images/King_imagery/SALIa2016a')
+
 ptm <- proc.time()
-img_results <- img_fun(PATH = path, MASK = mask, WHICH = 'ALL')
+SALIa2016a <- img_fun(PATH = path_SALIa2016a, WHICH = 'ALL', CORES = 2)
 proc.time() - ptm
+
+
+#SALIb2015
+path_SALIb2015 <- paste0(dir, 'Images/King_imagery/SALIb2015')
+
+ptm <- proc.time()
+SALIb2015 <- img_fun(PATH = path_SALIb2015, WHICH = 'ALL', CORES = 2)
+proc.time() - ptm
+
+
 
 
 
@@ -248,10 +263,14 @@ proc.time() - ptm
 
 setwd(paste0(dir, 'Output'))
 
-#write.table(img_results, "GOLDa2016a_RGB.csv", row.names = FALSE, sep = ",")
+write.table(SALIa2015, "SALIa2015_RGB.csv", row.names = FALSE, sep = ",")
+write.table(SALIa2016a, "SALIa2016a_RGB.csv", row.names = FALSE, sep = ",")
+write.table(SALIb2015, "SALIb2015_RGB.csv", row.names = FALSE, sep = ",")
 
-#read csv in
-#img_results <- read.csv('GOLDa2016a_RGB.csv')
+
+
+
+
 
 
 
