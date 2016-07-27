@@ -301,34 +301,42 @@ proc.time() - ptm
 #This is the time limiting step. Many starting points must be run to make
 #...sure cluster centers are determined correctly. 2million seems alright her
 #return nest centers in original coordinate system
+#NOTE: MULTIPLE CORES DOES NOT WORK ON WINDOWS (WORKS ON EVERY OTHER OS)
 
-km_fun <- function(FILTER_OUT, NESTS, CORES = 1, ITERS = 2000000)
+
+km_fun <- function(FILTER_OUT, NESTS, CORES = 1, ITERS = 2e6)
 {
   #FILTER_OUT <- filter_out
   #ITERS = 2000
   #CORES = 1
   #NESTS = 26
-   
+  
   DATA <- as.matrix(FILTER_OUT)
   
-  #parallelization
-  par.function <- function(i)
+  
+  if (CORES == 1)
   {
-    kmeans(DATA, NESTS, nstart= i, iter.max= 1000000000, algorithm = 'Hartigan-Wong')
+    OUT <- kmeans(DATA, NESTS, nstart= ITERS, iter.max= 1e9, algorithm = 'Hartigan-Wong')
+  }else{
+
+    #parallelization
+    par.function <- function(i)
+    {
+      kmeans(DATA, NESTS, nstart= i, iter.max= 1e9, algorithm = 'Hartigan-Wong')
+    }
+
+  
+    PER_CORE <- round(ITERS/CORES)
+    VEC <- rep(PER_CORE, CORES)
+  
+  
+    #run function
+    res <- mclapply(VEC, FUN = par.function)
+
+    #merge output from different cores
+    temp.vec <- sapply(res, function(nests) {nests$tot.withinss})
+    OUT <- res[[which.min(temp.vec)]]
   }
-
-  
-  PER_CORE <- round(ITERS/CORES)
-  VEC <- rep(PER_CORE, CORES)
-  
-  
-  #run function
-  res <- mclapply(VEC, FUN = par.function)
-
-  #merge output from different cores
-  temp.vec <- sapply(res, function(nests) {nests$tot.withinss})
-  OUT <- res[[which.min(temp.vec)]]
-
   
   return(OUT$centers)
 }
