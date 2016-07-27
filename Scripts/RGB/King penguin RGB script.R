@@ -8,7 +8,6 @@
 #TO DOS
 #pick out dark and snowy images
 #find where change point happens in time series
-#fix moving avg
 
 #In order to:
 #need to filter out night images and snow images
