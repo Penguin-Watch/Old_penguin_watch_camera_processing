@@ -311,6 +311,13 @@ km_fun <- function(FILTER_OUT, NESTS, CORES = 1, ITERS = 2e6)
   #CORES = 1
   #NESTS = 26
   
+  ncore <- detectCores()
+  if(CORES > ncore)
+  {
+    stop("You don't have that many cores on your machine, dummy!")
+  }
+  
+  
   DATA <- as.matrix(FILTER_OUT)
   
   
