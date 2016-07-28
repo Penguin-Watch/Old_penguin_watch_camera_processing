@@ -8,6 +8,9 @@
 #
 ##################
 
+
+#make master funciton work for adults and chicks
+
 #TO DO
 #add master data input
 #grep site of interest
@@ -53,7 +56,8 @@ if('pacman' %in% rownames(installed.packages()) == FALSE)
   install.packages(pacman)
 }
 
-pacman::p_load(jpeg, MASS, SDMTools, parallel, deldir, sp, dplyr)
+pacman::p_load(jpeg, MASS, SDMTools, parallel, 
+               deldir, sp, dplyr, spatstat, moments)
 
 
 
@@ -104,45 +108,59 @@ NEKO_con_data <- NEKO_con_data_imp[grep('NEKOc2013', NEKO_con_data_imp$path),c(1
 colnames(NEKO_con_data) <- c('ID', 'ZOOID', 'path', 'x', 'y')
 
 
+setwd(paste0(dir, 'Data/Consensus_7_27_16'))
+
+
+
+#sort by adults, chicks, etc.
+unique(INPUT$name)
 
 
 # Nearest Neighbor --------------------------------------------------------
 
+setwd(paste0(dir, 'Data/Consensus_7_27_16'))
+NEKO <- read.csv('NEKOczooconc.csv', header= TRUE)
 
-require(spatstat)
-require(moments)
-tdat <- NEKO_con_data[,3:5]
-head(tdat, n= 100)
+INPUT <- NEKO
 
-images <- unique(tdat$path)
-#image 1 clicks
-plot(img_1[,2:3], pch=19)
+#filter for only points with above 0.5 prob of being TRUE positives
+to.rm <- which(INPUT$probability_of_true_positive < 0.5)
+n_INPUT <- INPUT[-to.rm,]
+images<- unique(n_INPUT$name)[1:1000]
+
+#ch_pos <- which(n_INPUT$probability_of_chick > 0.5)
+#chick <- n_INPUT[ch_pos,]
+#images <- unique(chick$name)
+
 
 #loop through images and find mean, sd, skew, kurt of NND for each image
 OUT <- c()
 for (i in 1:length(images))
 {
   #i <- 1
-  temp <- filter(tdat, path == images[i])
+  temp <- filter(n_INPUT, name == images[i])
   NND <- nndist(temp)
   temp_mean <- mean(NND)
   temp_sd <- sd(NND)
   temp_sk <- skewness(NND)
   temp_kurt <- kurtosis(NND)
+  temp_num <- nrow(temp) # number of penguins in image
   
   TOUT <- data.frame(img= images[i], MN= temp_mean, SD= temp_sd, 
-                     SKEW= temp_sk, KURT= temp_kurt) 
+                     SKEW= temp_sk, KURT= temp_kurt, NUM= temp_num) 
   
   OUT <- rbind(OUT, TOUT)
 }
 
 
+images[750]
+grep(620, INPUT$name)
 
 plot(OUT$MN, type='l')
 plot(OUT$SD, type='l')
 plot(OUT$SKEW, type='l')
 plot(OUT$KURT, type='l')
-
+plot(OUT$LEN, type='l')
 
 #change in mean NND over time
 #or
@@ -187,39 +205,12 @@ ortho_fun <- function(IN, OBL)
   return(OUT)
 }
 
-ptm <- proc.time()
-post_ortho <- ortho_fun(NEKO_con_data, 150)
-proc.time() - ptm
+#ptm <- proc.time()
+#post_ortho <- ortho_fun(NEKO_con_data, 150)
+#proc.time() - ptm
 
 
 
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#NOT NEEDED IF GREP AFTER NND AT BEGINNING
-#|
-#v
-
-#just 380 of images - about when creche happens 
-#this was determined here manually but can be automated with NND
-unique_images <- unique(tNEKO_con_data$path)
-
-series <- unique_images[1:380]
-
-temp_image <- c()
-for (i in 1:length(series))
-{
-  #i<-1
-  temp_lp <- tNEKO_con_data[grep(series[i], tNEKO_con_data$path),]
-  temp_image <- rbind(temp_image, temp_lp)
-}
-
-#^
-#|
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
-
-#need to ortho for just period of interest and then (which would be done
-#earlier in NND function)
 
 
 # Click Density -----------------------------------------------------------
@@ -249,9 +240,9 @@ den_fun <- function(POST_ORTHO)
   return(OUT)
 }
 
-ptm <- proc.time()
-den_out <- den_fun(post_ortho)
-proc.time() - ptm
+#ptm <- proc.time()
+#den_out <- den_fun(post_ortho)
+#proc.time() - ptm
 
 
 
@@ -290,9 +281,9 @@ filter_fun <- function(DEN_OUT, POST_ORTHO, D_THR = 0.25)
   return(OUT)
 }
 
-ptm <- proc.time()
-filter_out <- filter_fun(den_out, post_ortho, D_THR = 0.25)
-proc.time() - ptm
+#ptm <- proc.time()
+#filter_out <- filter_fun(den_out, post_ortho, D_THR = 0.25)
+#proc.time() - ptm
 
 
 
@@ -352,9 +343,9 @@ km_fun <- function(FILTER_OUT, NESTS, CORES = 1, ITERS = 2e6)
   return(OUT$centers)
 }
 
-ptm <- proc.time()
-km_out <- km_fun(filter_out, NESTS = 26, CORES = 2, ITERS= 2000)
-proc.time() - ptm
+#ptm <- proc.time()
+#km_out <- km_fun(filter_out, NESTS = 26, CORES = 2, ITERS= 2000)
+#proc.time() - ptm
 
 #-----------#
 #benchmark results for MBP
@@ -409,9 +400,9 @@ rev_ortho_fun <- function(KM_OUT, POST_ORTHO)
   
 }
 
-ptm <- proc.time()
-km_rev_ortho <- rev_ortho_fun(km_out, post_ortho)
-proc.time() - ptm
+#ptm <- proc.time()
+#km_rev_ortho <- rev_ortho_fun(km_out, post_ortho)
+#proc.time() - ptm
 
 
 
@@ -448,9 +439,9 @@ poly_fun <- function(KM_REV_ORTHO)
 }
 
 
-ptm <- proc.time()
-poly_out <- poly_fun(km_rev_ortho)
-proc.time() - ptm
+#ptm <- proc.time()
+#poly_out <- poly_fun(km_rev_ortho)
+#proc.time() - ptm
 
 
 
@@ -492,9 +483,9 @@ order_fun <- function(POST_NND)
   return(OUT)
 }
 
-ptm <- proc.time()
-order_out <- order_fun(NEKO_con_data)
-proc.time() - ptm
+#ptm <- proc.time()
+#order_out <- order_fun(NEKO_con_data)
+#proc.time() - ptm
 
 
 
@@ -527,9 +518,9 @@ point_fun <- function(POLY, ORDER_OUT)
   return(t_series)
 }
 
-ptm <- proc.time()
-point_fun_out <- point_fun(poly_out, order_out)
-proc.time() - ptm
+#ptm <- proc.time()
+#point_fun_out <- point_fun(poly_out, order_out)
+#proc.time() - ptm
 
 
 
@@ -573,9 +564,9 @@ ts_fun <- function(POINT_FUN_OUT)
 }
 
 
-ptm <- proc.time()
-ts_out <- ts_fun(point_fun_out)
-proc.time() - ptm
+#ptm <- proc.time()
+#ts_out <- ts_fun(point_fun_out)
+#proc.time() - ptm
 
 
 
@@ -590,17 +581,20 @@ proc.time() - ptm
 #... rev_ortho_fun -> poly_fun -> order_fun -> point_fun -> ts_fun 
 
 
-master_fun <- function(input, nests, obl, d_thr = 0.25, cores = 1, iters = 2e6)
+#defines nests and creates polygons from tesselation
+nest_fun <- function(input, nests, obl, d_thr = 0.25, cores = 1, iters = 2e6)
 {
 
-  #input <- NEKO_con_data
+  #input <- NEKO
   #nests <- 26
   #obl <- 150
   #d_thr <- 0.25
   #cores <- 1
   #iters <- 2000
   
-  t_post_ortho <- ortho_fun(IN= input, OBL= obl)
+  INPUT <- input
+  
+  t_post_ortho <- ortho_fun(IN= n_INPUT, OBL= obl)
   
   t_den_out <- den_fun(POST_ORTHO = t_post_ortho)
   
@@ -614,6 +608,15 @@ master_fun <- function(input, nests, obl, d_thr = 0.25, cores = 1, iters = 2e6)
                                   POST_ORTHO = t_post_ortho)
   
   t_poly_out <- poly_fun(KM_REV_ORTHO = t_km_rev_ortho)
+
+  return(t_poly_out)
+}
+
+
+#create time series using nest tesselation from function above
+series_fun <- function(input, POLY)
+{
+  
   
   t_order_out <- order_fun(POST_NND = input)
   
@@ -627,8 +630,21 @@ master_fun <- function(input, nests, obl, d_thr = 0.25, cores = 1, iters = 2e6)
 
 
 
+
+
+# RUN FUNCTION ------------------------------------------------------------
+
+
+#load data
+setwd(paste0(dir, 'Data/Consensus_7_27_16'))
+NEKO <- read.csv('NEKOczooconc.csv', header= TRUE)[1:37789,] #determined manually/NND above
+to.rm <- which(NEKO$probability_of_true_positive < 0.5)
+n_NEKO <- NEKO[-to.rm,]
+colnames(n_NEKO)[2:3] <- c('x','y')
+
+#run function
 ptm <- proc.time()
-master_OUT <- master_fun(input = NEKO_con_data,
+nest_OUT <- nest_fun(input = n_NEKO,
                          nests = 26, 
                          obl = 150, 
                          d_thr = 0.25,
@@ -637,6 +653,7 @@ master_OUT <- master_fun(input = NEKO_con_data,
 proc.time() - ptm
 
 
+series_fun(nest_OUT, )
 
 
 
