@@ -71,21 +71,52 @@ cam_trans <- function(input, INVERT = FALSE)
 
 
 
-#instead of 1000 x 750 images are 1920 x 1080?????
-head(test)
 
-
-#consensus click input basically in 1000 x 750
-hist(test[,2])
-range(test[,2], na.rm=TRUE)
-hist(test[,3])
-range(test[,3], na.rm=TRUE)
 
 
 
 
 # Load/process data -------------------------------------------------------
 
+
+###NEKO
+setwd(paste0(dir, 'Data/Consensus_7_27_16'))
+
+#for clicks
+test_pre <- read.csv('NEKOczooconc.csv', header= TRUE)
+
+to.rm <- which(test_pre$probability_of_true_positive < 0.5)
+test <- test_pre[-to.rm,]
+
+#adults
+ad_pos <- which(test$probability_of_adult > 0.5)
+adult <- test[ad_pos,]
+adult_images <- unique(adult$name)
+
+#chicks
+ch_pos <- which(test$probability_of_chick > 0.5)
+chick <- test[ch_pos,]
+chick_images <- unique(chick$name)
+
+#egg is all 0 for some reason
+egg_pos <- which(test$probability_of_egg > 0.5)
+egg <- test[egg_pos,]
+egg_images <- unique(egg$name)
+
+
+
+#for images
+
+setwd(paste0(dir, 'Images/NEKOc'))
+
+images <- list.files()
+
+
+
+
+
+###YALO
+#instead of 1000 x 750 images are 1920 x 1080?????
 
 #for clicks
 setwd(paste0(dir, 'Data'))
@@ -98,13 +129,27 @@ setwd(paste0(dir, 'Images/YALOa'))
 images <- list.files()
 
 
+
+
+
+#RUN SCRIPT
+
+
+INPUT <- chick
+IMAGES <- images
+
+
+
+#determine unique images for input
+click_images <- unique(INPUT$name)
+
 for (i in 1:length(click_images))
 {
+  setwd(paste0(dir, 'Images/NEKOc'))
   #i <- 1
   
-
   #filter for just clicks from one image name
-  clicks <- filter(test, name == paste0(click_images[i]))
+  clicks <- filter(INPUT, name == paste0(click_images[i]))
   #transform clicks to 2048 x 1536 to plot
   trans_clicks <- cam_trans(clicks[,2:3], INVERT = TRUE)
   
@@ -115,10 +160,10 @@ for (i in 1:length(click_images))
   print(cl_name)
   
   #position in image vector
-  pos_img <- grep(cl_name[1], images)
+  pos_img <- grep(cl_name[1], IMAGES)
   
   #plot image
-  plot_jpeg(images[pos_img])
+  plot_jpeg(IMAGES[pos_img])
   #plot consensus clicks on image
   points(trans_clicks, col='green', pch=19)
   
