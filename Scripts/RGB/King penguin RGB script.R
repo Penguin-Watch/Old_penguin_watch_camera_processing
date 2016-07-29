@@ -64,10 +64,11 @@ if(Sys.info()[['sysname']] == 'Darwin')
 img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
 {
 
-  #PATH <- paste0(dir, 'Images/GOLDa2016a')
-  #MASK <- paste0('/Users/caseyyoungflesh/Google Drive/R/pwatch/Images/mask_test.jpg')
+  #PATH <- paste0(dir, 'Images/King_imagery/SALIa2015')
+  #MASK <- paste0('/Users/caseyyoungflesh/Google Drive/R/pwatch/Images/King_imagery/SALIa_mask.jpg')
   #MASK <- NULL
   #WHICH <- 1:100
+  #CORES = 1
   
   ncore <- detectCores()
   
@@ -94,6 +95,7 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
   int_fun <- function(IMG_IN)
   {
     
+    #IMG_IN <- images
     tMASK <- MASK
     
     #create empty matrix
@@ -124,8 +126,10 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
           temp_jpeg <- temp_img
         }else{
           mask <- readJPEG(tMASK)
+          
+          #replace 0 with NA (not that it matters, since relative to rest of image time series)
+          mask[which(mask == 0, arr.ind = TRUE)] <- NA
           temp_jpeg <- as.array(temp_img*mask)
-          #make sure this is transformed to NA
         }
 
       
@@ -234,9 +238,10 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
 
 #SALIa2015
 path_SALIa2015 <- paste0(dir, 'Images/King_imagery/SALIa2015')
+mask_SALIa <- paste0(dir, 'Images/King_imagery/SALIa_mask.jpg')
 
 ptm <- proc.time()
-SALIa2015 <- img_fun(PATH = path_SALIa2015, WHICH = 'ALL', CORES = 2)
+SALIa2015 <- img_fun(PATH = path_SALIa2015, MASK = mask_SALIa, WHICH = 'ALL', CORES = 2)
 proc.time() - ptm
 
 
@@ -244,15 +249,16 @@ proc.time() - ptm
 path_SALIa2016a <- paste0(dir, 'Images/King_imagery/SALIa2016a')
 
 ptm <- proc.time()
-SALIa2016a <- img_fun(PATH = path_SALIa2016a, WHICH = 'ALL', CORES = 2)
+SALIa2016a <- img_fun(PATH = path_SALIa2016a, MASK = mask_SALIa, WHICH = 'ALL', CORES = 2)
 proc.time() - ptm
 
 
 #SALIb2015
 path_SALIb2015 <- paste0(dir, 'Images/King_imagery/SALIb2015')
+mask_SALIb <- paste0(dir, 'Images/King_imagery/SALIb_mask.jpg')
 
 ptm <- proc.time()
-SALIb2015 <- img_fun(PATH = path_SALIb2015, WHICH = 'ALL', CORES = 2)
+SALIb2015 <- img_fun(PATH = path_SALIb2015, MASK = mask_SALIb, WHICH = 'ALL', CORES = 2)
 proc.time() - ptm
 
 
@@ -267,42 +273,8 @@ write.table(SALIb2015, "SALIb2015_RGB.csv", row.names = FALSE, sep = ",")
 
 
 
-
-#NOTES ON IMAGERY
-
-#SALIa2015
-#img_results <- SALIa2015
-#black images
-
-#night white
-#1206
-#1214
-#1222
-#1230
-#1238 (x8)
-#1325, 1326
-#1390, 1406, 1510 #particularly good
-
-#SUN images
-#1479
-#1511
-#1519
-#1527
-
-#stormy
-#1583-1589
-
-
-#transition
-#000001 - chicks
-#000626 - no chicks
-#001050 - start of chicks
-
-
-
-
-#filter images only from 10AM-2PM
-
+#filter images only from 10AM-2PM (no darkness/early morning sun in camera view)
+#filtering this doesn't appear to detect changes better
 to.rm <- grep('[(]', SALIa2015[,1])
 n_SALIa2015 <- SALIa2015[-to.rm,]
 
@@ -318,6 +290,8 @@ for (i in 0:2)
 
 #only images from 10AM-2PM
 f_img <- n_SALIa2015[sort(OUT),]
+
+
 
 
 
@@ -341,16 +315,17 @@ ma_fun <- function(x, n= 5, SIDES= 2)
   return(OUT)
 }
 
-#5 year moving average
-ma_results <- apply(st_results, 2, function(X){ma_fun(X, n = 5)})
+#5 time step moving average
+#ma_results <- apply(st_results, 2, function(X){ma_fun(X, n = 5)})
+ma_results <- st_results
 
 #make data frame with image names and standardized, moving average values
 st_res_df <- data.frame(name = img_results[,1], ma_results)
 
 
+plot(1:length(st_res_df$name), st_res_df$red_mean, type='l')
 
-
-
+st_res_df$name[600]
 
 # Plot summary metrics ----------------------------------------------------
 
