@@ -257,8 +257,6 @@ proc.time() - ptm
 
 
 
-
-
 # Write results to file ---------------------------------------------------
 
 setwd(paste0(dir, 'Output'))
