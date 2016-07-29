@@ -268,9 +268,64 @@ write.table(SALIb2015, "SALIb2015_RGB.csv", row.names = FALSE, sep = ",")
 
 
 
+#NOTES ON IMAGERY
+
+#SALIa2015
+#img_results <- SALIa2015
+#black images
+
+#night white
+#1206
+#1214
+#1222
+#1230
+#1238 (x8)
+#1325, 1326
+#1390, 1406, 1510 #particularly good
+
+#SUN images
+#1479
+#1511
+#1519
+#1527
+
+#stormy
+#1583-1589
+
+
+#transition
+#000001 - chicks
+#000626 - no chicks
+#001050 - start of chicks
 
 
 
+
+#filter images only from 10AM-2PM
+
+to.rm <- grep('[(]', SALIa2015[,1])
+n_SALIa2015 <- SALIa2015[-to.rm,]
+
+len <- nrow(n_SALIa2015) #number of images
+vec <- seq(from= 1, to= len, by= 8)
+
+OUT <- c()
+for (i in 0:2)
+{
+  #i <- 3
+  OUT <- c(OUT, vec+i)
+}
+
+#only images from 10AM-2PM
+f_img <- n_SALIa2015[sort(OUT),]
+
+
+
+
+
+
+#img_results <- f_img
+#img_results <- SALIb2015
 
 # Process metrics -----------------------------------------------------
 
