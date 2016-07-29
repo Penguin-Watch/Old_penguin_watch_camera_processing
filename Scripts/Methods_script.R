@@ -9,21 +9,17 @@
 ##################
 
 
-#make master funciton work for adults and chicks
-
 #TO DO
-#add master data input
-#grep site of interest
-#NND to determine nest and creche time
-#grep images of interest to run through processing pipeline
+#Run through all ADPE sites
+#Annotate images manually and compare to consensus
 #NOTE: function might not run on windows, as it uses mcapply() which
 #...doesn't work on windows (fine for anything but windows)
 
 
 #DATA FOR ANALYSIS
 #ADPE cams
-#X----YALOa (3? seasons) - likely YALO and PETE together for methods paper
-#X----PETEd (3 seasons)
+#YALOa (3? seasons) - likely YALO and PETE together for methods paper
+#PETEd (3 seasons)
 #Hinke (2 cams, 1 season)
 #SSSIc (1 incomplete season)
 
@@ -175,14 +171,16 @@ plot(OUT$LEN, type='l')
 #essentially normalizing area
 #IN is post NND
 
+
 ortho_fun <- function(IN, OBL)
 {
-  #IN <- NEKO_con_data
+  #IN <- n_NEKO
   #OBL <- 150
   
   #remove erroneous clicks outside of defined region
-  to_rm <- which(IN$x > 1000 | IN$x < 0 | IN$y < 0 | IN$y > 750)
+  to_rm <- which(IN$x > 1000 | IN$x < 0 | IN$y < 0 | IN$y > 750 | is.na(IN$x) == TRUE)
 
+  
   #remove erroneous clicks
   if(length(to_rm) > 0)
   {
@@ -206,7 +204,7 @@ ortho_fun <- function(IN, OBL)
 }
 
 #ptm <- proc.time()
-#post_ortho <- ortho_fun(NEKO_con_data, 150)
+#post_ortho <- ortho_fun(n_NEKO, 150)
 #proc.time() - ptm
 
 
@@ -456,35 +454,28 @@ poly_fun <- function(KM_REV_ORTHO)
 order_fun <- function(POST_NND)
 {
   
-  #POST_NND <- NEKO_con_data
-  
-  #Arrange data by image # (time)
-  #get jpg number from path name and sort
-  data_order <- order(substr(POST_NND$path, start=18, stop=23))
-  image_names <- POST_NND$path[data_order]
-  
-  x.pt <- (POST_NND$x[data_order])
-  y.pt <- (750 - (POST_NND$y[data_order]))
-  
+  #POST_NND <- f_NEKO
+
   #zooniverse consensus click data - sorted in chronological order
-  click.dat <- data.frame(IMG= image_names, X= x.pt, Y= y.pt)
+  ord_data <- POST_NND[order(POST_NND$name),]
+  ord_data$y <- (750- ord_data$y)
   
   #remove erroneous clicks outside of defined region
-  to_rm <- which(click.dat$X > 1000 | click.dat$X < 0 | click.dat$Y < 0 | click.dat$Y > 750)
+  to_rm <- which(ord_data$X > 1000 | ord_data$X < 0 | ord_data$Y < 0 | ord_data$Y > 750)
   
   #remove erroneous clicks
   if(length(to_rm) > 0)
   {
-    OUT <- click.dat[-to_rm,]
+    OUT <- ord_data[-to_rm,]
   }else{
-    OUT <- click.dat
+    OUT <- ord_data
   }
   
   return(OUT)
 }
 
 #ptm <- proc.time()
-#order_out <- order_fun(NEKO_con_data)
+#order_out <- order_fun(f_NEKO)
 #proc.time() - ptm
 
 
@@ -495,10 +486,10 @@ order_fun <- function(POST_NND)
 
 point_fun <- function(POLY, ORDER_OUT)
 {
-  #POLY <- poly_out
-  #ORDER_OUT <- order_out
+  #POLY <- nest_OUT
+  #ORDER_OUT <- OUT
   
-  DATA <- cbind(ORDER_OUT[,2], ORDER_OUT[,2])
+  DATA <- cbind(ORDER_OUT[,2], ORDER_OUT[,3])
   
   #determine which points are in which polygons
   out <- c()
@@ -513,15 +504,14 @@ point_fun <- function(POLY, ORDER_OUT)
 
   #create data frame
   colnames(out) <- temp.names
-  t_series <- data.frame(IMAGE = ORDER_OUT[,1], out)
+  t_series <- data.frame(ORDER_OUT, out)
 
   return(t_series)
 }
 
 #ptm <- proc.time()
-#point_fun_out <- point_fun(poly_out, order_out)
+#point_fun_out <- point_fun(nest_OUT, order_out)
 #proc.time() - ptm
-
 
 
 
@@ -533,32 +523,55 @@ ts_fun <- function(POINT_FUN_OUT)
   #POINT_FUN_OUT <- point_fun_out
   
   #unique images
-  u_images <- unique(POINT_FUN_OUT$IMAGE)
+  u_images <- unique(POINT_FUN_OUT$name)
 
   #progress bar
   pb <- txtProgressBar(min = 1, max = NROW(u_images), style = 3)
 
   #create empty matrix
-  OUT <- matrix(nrow= NROW(u_images), ncol= (NCOL(POINT_FUN_OUT)-1))
+  OUT <- matrix(nrow= NROW(u_images)*3, ncol= (NCOL(POINT_FUN_OUT)-9))
 
   #summary information for each image (i.e., time step)
   for(i in 1:NROW(u_images))
   {
-    #i <- 1
-    temp <- filter(POINT_FUN_OUT, IMAGE == u_images[i])
+    #i <- 4
+    temp <- filter(POINT_FUN_OUT, name == u_images[i])
+    
+    #filter for adults
+    ad_pos <- which(temp$probability_of_adult > 0.5)
+    adult <- temp[ad_pos,-c(1:9)]
+    #sum number of adult in each polygon
+    sum_ad <- apply(adult, 2, sum)
   
-    #sum number of penguins in given polygon for each image
-    summed <- apply(temp[,-1], 2, sum)
-  
-    OUT[i,] <- summed
+    #filter for chicks
+    ch_pos <- which(temp$probability_of_chick > 0.5)
+    chick <- temp[ch_pos,-c(1:9)]
+    #sum number of adult in each polygon
+    sum_ch <- apply(chick, 2, sum)
+    
+    #filter for adults
+    egg_pos <- which(temp$probability_of_egg > 0.5)
+    egg <- temp[egg_pos,-c(1:9)]
+    #sum number of adult in each polygon
+    sum_egg <- apply(egg, 2, sum)
+    
+    
+    #fill matrix by multiples of three
+    OUT[(i*2)+(i-2),] <- sum_ad
+    OUT[(i*2)+(i-1),] <- sum_ch
+    OUT[(i*2)+(i),] <- sum_egg
     setTxtProgressBar(pb, i)
   }
   close(pb)
 
+  colnames(OUT) <- colnames(POINT_FUN_OUT[-c(1:9)])
+    
   #bind time series data with image names
-  summary <- data.frame(IMAGE= u_images, OUT)
-  colnames(summary) <- colnames(POINT_FUN_OUT)
-
+  summary <- data.frame(IMAGE= rep(u_images, each=3), 
+                        TYPE= rep(c('ADULT', 'CHICK', 'EGG'), times = length(u_images)),
+                        OUT)
+  
+  
   #time series for each nest - see reference image for nest number
   return(summary)
 }
@@ -594,7 +607,7 @@ nest_fun <- function(input, nests, obl, d_thr = 0.25, cores = 1, iters = 2e6)
   
   INPUT <- input
   
-  t_post_ortho <- ortho_fun(IN= n_INPUT, OBL= obl)
+  t_post_ortho <- ortho_fun(IN= INPUT, OBL= obl)
   
   t_den_out <- den_fun(POST_ORTHO = t_post_ortho)
   
@@ -613,17 +626,19 @@ nest_fun <- function(input, nests, obl, d_thr = 0.25, cores = 1, iters = 2e6)
 }
 
 
+
+
 #create time series using nest tesselation from function above
-series_fun <- function(input, POLY)
+series_fun <- function(input, poly)
 {
-  
-  
+  #poly <- nest_OUT
+  #input <- f_NEKO
+
   t_order_out <- order_fun(POST_NND = input)
   
-  t_point_out <- point_fun(POLY = t_poly_out, ORDER_OUT = t_order_out)
+  t_point_out <- point_fun(POLY = poly, ORDER_OUT = t_order_out)
   
   OUT <- ts_fun(POINT_FUN_OUT = t_point_out)
-  
   return(OUT)
 }
 
@@ -634,17 +649,21 @@ series_fun <- function(input, POLY)
 
 # RUN FUNCTION ------------------------------------------------------------
 
+#filter data for true positives > 0.5 before feeding into function
+#Determine appropriate cut off with NND or visually and filter before function
 
 #load data
 setwd(paste0(dir, 'Data/Consensus_7_27_16'))
-NEKO <- read.csv('NEKOczooconc.csv', header= TRUE)[1:37789,] #determined manually/NND above
+NEKO <- read.csv('NEKOczooconc.csv', header= TRUE)
 to.rm <- which(NEKO$probability_of_true_positive < 0.5)
 n_NEKO <- NEKO[-to.rm,]
 colnames(n_NEKO)[2:3] <- c('x','y')
+f_NEKO <- n_NEKO[1:1e4,]
 
-#run function
+
+#nest tesselation
 ptm <- proc.time()
-nest_OUT <- nest_fun(input = n_NEKO,
+nest_OUT <- nest_fun(input = f_NEKO,
                          nests = 26, 
                          obl = 150, 
                          d_thr = 0.25,
@@ -653,8 +672,11 @@ nest_OUT <- nest_fun(input = n_NEKO,
 proc.time() - ptm
 
 
-series_fun(nest_OUT, )
-
+#time series
+ptm <- proc.time()
+master_out <- series_fun(input = f_NEKO, 
+                         nest_OUT)
+proc.time() - ptm
 
 
 
