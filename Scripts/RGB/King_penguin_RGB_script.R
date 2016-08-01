@@ -65,7 +65,7 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
 {
 
   #PATH <- paste0(dir, 'Images/King_imagery/SALIa2015')
-  #MASK <- paste0('/Users/caseyyoungflesh/Google Drive/R/pwatch/Images/King_imagery/SALIa_mask.jpg')
+  #MASK <- paste0('/Users/caseyyoungflesh/Google Drive/R/pwatch/Images/King_imagery/Masks/SALIa_mask.jpg')
   #MASK <- NULL
   #WHICH <- 1:100
   #CORES = 1
@@ -128,7 +128,7 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
           mask <- readJPEG(tMASK)
           
           #replace 0 with NA (not that it matters, since relative to rest of image time series)
-          mask[which(mask == 0, arr.ind = TRUE)] <- NA
+          #mask[which(mask == 0, arr.ind = TRUE)] <- NA
           temp_jpeg <- as.array(temp_img*mask)
         }
 
@@ -144,26 +144,26 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
       
         #RED
         temp_r1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 1])
-        results[i,1] <- mean(temp_r1)
-        results[i,2] <- sd(temp_r1)
-        results[i,3] <- skewness(temp_r1)
-        results[i,4] <- kurtosis(temp_r1)
+        results[i,1] <- mean(temp_r1, na.rm=TRUE)
+        results[i,2] <- sd(temp_r1, na.rm=TRUE)
+        results[i,3] <- skewness(temp_r1, na.rm=TRUE)
+        results[i,4] <- kurtosis(temp_r1, na.rm=TRUE)
 
 
         #GREEN
         temp_g1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 2])
-        results[i,5] <- mean(temp_g1)
-        results[i,6] <- sd(temp_g1)
-        results[i,7] <- skewness(temp_g1)
-        results[i,8] <- kurtosis(temp_g1)
+        results[i,5] <- mean(temp_g1, na.rm=TRUE)
+        results[i,6] <- sd(temp_g1, na.rm=TRUE)
+        results[i,7] <- skewness(temp_g1, na.rm=TRUE)
+        results[i,8] <- kurtosis(temp_g1, na.rm=TRUE)
 
 
         #BLUE
         temp_b1 <- as.vector(temp_jpeg[1:vert, 1:horiz, 3])
-        results[i,9] <- mean(temp_b1)
-        results[i,10] <- sd(temp_b1)
-        results[i,11] <- skewness(temp_b1)
-        results[i,12] <- kurtosis(temp_b1)
+        results[i,9] <- mean(temp_b1, na.rm=TRUE)
+        results[i,10] <- sd(temp_b1, na.rm=TRUE)
+        results[i,11] <- skewness(temp_b1, na.rm=TRUE)
+        results[i,12] <- kurtosis(temp_b1, na.rm=TRUE)
 
       }
 
@@ -239,6 +239,7 @@ img_fun <- function(PATH, MASK = NULL, WHICH = 'ALL', CORES = 1)
 #SALIa2015
 path_SALIa2015 <- paste0(dir, 'Images/King_imagery/SALIa2015')
 mask_SALIa <- paste0(dir, 'Images/King_imagery/Masks/SALIa_mask.jpg')
+
 
 ptm <- proc.time()
 SALIa2015 <- img_fun(PATH = path_SALIa2015, MASK = mask_SALIa, WHICH = 'ALL', CORES = 2)
