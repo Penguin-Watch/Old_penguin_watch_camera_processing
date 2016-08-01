@@ -274,27 +274,6 @@ write.table(SALIb2015, "SALIb2015_RGB.csv", row.names = FALSE, sep = ",")
 
 
 
-#filter images only from 10AM-2PM (no darkness/early morning sun in camera view)
-#filtering this doesn't appear to detect changes better
-to.rm <- grep('[(]', SALIa2015[,1])
-n_SALIa2015 <- SALIa2015[-to.rm,]
-
-len <- nrow(n_SALIa2015) #number of images
-vec <- seq(from= 1, to= len, by= 8)
-
-OUT <- c()
-for (i in 0:2)
-{
-  #i <- 3
-  OUT <- c(OUT, vec+i)
-}
-
-#only images from 10AM-2PM
-f_img <- n_SALIa2015[sort(OUT),]
-
-
-
-
 
 #Masks of just penguin chicks to create 'endmember'
 
@@ -305,13 +284,39 @@ f_img <- n_SALIa2015[sort(OUT),]
 
 
 
-#img_results <- f_img
-#img_results <- SALIb2015
+
 
 # Process and plot metrics -----------------------------------------------------
 
+
+#read in processed data
+setwd(paste0(dir, 'Output'))
+
+pro_SALIa2015 <- read.csv('SALIa2015_RGB.csv')
+
+
+
+#filter images only from 10AM-2PM (no darkness/early morning sun in camera view)
+#filtering this doesn't appear to detect changes better
+len <- nrow(pro_SALIa2015) #number of images
+vec <- seq(from= 1, to= len, by= 8)
+
+OUT <- c()
+for (i in 0:2)
+{
+  #i <- 3
+  OUT <- c(OUT, vec+i)
+}
+
+#only images from 10AM-2PM
+f_img <- pro_SALIa2015[sort(OUT),]
+
+
+
+
+
 #standardize 
-st_results <- apply(img_results[,-1], 2, function(X){scale(X, scale = TRUE)})
+st_results <- apply(f_img[,-1], 2, function(X){scale(X, scale = TRUE)})
 
 
 #moving avg function
@@ -327,25 +332,30 @@ ma_fun <- function(x, n= 5, SIDES= 2)
 ma_results <- st_results
 
 #make data frame with image names and standardized, moving average values
-st_res_df <- data.frame(name = img_results[,1], ma_results)
+st_res_df <- data.frame(name = f_img[,1], ma_results)
 
 
-plot(1:length(st_res_df$name), st_res_df$red_mean, type='l')
+#plot(1:400, st_res_df$red_mean[1:400], type='l')
 
-st_res_df$name[600]
+
 
 # Plot summary metrics ----------------------------------------------------
 
-#all metrics
-m_st_results <- melt(st_res_df, 'name')
+#change point for SALIa2015 where chicks appear is about position 236
 
-ggplot(m_st_results, aes(x = name, y = value, group = variable, color = variable)) +
+RANGE <- 1:500
+
+#all metrics - just from 0 to 500 to look for signals of change
+m_st_results <- melt(st_res_df[RANGE,], 'name')
+
+
+ggplot(m_st_results, aes(x = NUM, y = value, group = variable, color = variable)) +
   geom_line(alpha=0.5) + 
   theme(axis.text.x = element_blank())
 
 
 #ALL red
-m_st_red <- melt(st_res_df[,1:5], 'name')
+m_st_red <- melt(st_res_df[RANGE,1:5], 'name')
 
 ggplot(m_st_red, aes(x = name, y = value, group = variable, color = variable)) +
   geom_line(alpha=0.5) + 
@@ -353,7 +363,7 @@ ggplot(m_st_red, aes(x = name, y = value, group = variable, color = variable)) +
 
 
 #ALL green
-m_st_green <- melt(st_res_df[,c(1, 6:9)], 'name')
+m_st_green <- melt(st_res_df[RANGE,c(1, 6:9)], 'name')
 
 ggplot(m_st_green, aes(x = name, y = value, group = variable, color = variable)) +
   geom_line(alpha=0.5) + 
@@ -361,7 +371,7 @@ ggplot(m_st_green, aes(x = name, y = value, group = variable, color = variable))
 
 
 #ALL blue
-m_st_blue <- melt(st_res_df[,c(1, 10:13)], 'name')
+m_st_blue <- melt(st_res_df[RANGE,c(1, 10:13)], 'name')
 
 ggplot(m_st_blue, aes(x = name, y = value, group = variable, color = variable)) +
   geom_line(alpha=0.5) + 
@@ -370,15 +380,17 @@ ggplot(m_st_blue, aes(x = name, y = value, group = variable, color = variable)) 
 
 
 #ALL mean
-m_st_mean <- melt(st_res_df[,c(1:2,6,10)], 'name')
+m_st_mean <- melt(st_res_df[RANGE,c(1:2,6,10)], 'name')
 
-ggplot(m_st_mean, aes(x = name, y = value, group = variable, color = variable)) +
+ggplot(m_st_mean, aes(x = NUM, y = value, group = variable, color = variable)) +
   geom_line(alpha=0.5) + 
   theme(axis.text.x = element_blank())
 
 
+
+
 #ALL sd
-m_st_sd <- melt(st_res_df[,c(1,3,7,11)], 'name')
+m_st_sd <- melt(st_res_df[RANGE,c(1,3,7,11)], 'name')
 
 ggplot(m_st_sd, aes(x = name, y = value, group = variable, color = variable)) +
   geom_line(alpha=0.5) + 
@@ -386,7 +398,7 @@ ggplot(m_st_sd, aes(x = name, y = value, group = variable, color = variable)) +
 
 
 #ALL skew
-m_st_skew <- melt(st_res_df[,c(1,4,8,12)], 'name')
+m_st_skew <- melt(st_res_df[RANGE,c(1,4,8,12)], 'name')
 
 ggplot(m_st_skew, aes(x = name, y = value, group = variable, color = variable)) +
   geom_line(alpha=0.5) + 
@@ -394,7 +406,7 @@ ggplot(m_st_skew, aes(x = name, y = value, group = variable, color = variable)) 
 
 
 #ALL kurtosis
-m_st_kurtosis <- melt(st_res_df[,c(1,5,9,13)], 'name')
+m_st_kurtosis <- melt(st_res_df[RANGE,c(1,5,9,13)], 'name')
 
 ggplot(m_st_kurtosis, aes(x = name, y = value, group = variable, color = variable)) +
   geom_line(alpha=0.5) + 
