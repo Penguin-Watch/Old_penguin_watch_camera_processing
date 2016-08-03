@@ -6,8 +6,12 @@
 ###############
 
 #TO DOS
-#pick out dark and snowy images
+#look at time series of images from 10am-2pm (night filtered out)
 #find where change point happens in time series
+#ALTERNATIVELY:
+#use chick mask filters on specified images to make 'spectral endmembers' for
+#...KIPE chicks. Then apply to each image to get proprotion of image that is
+#...covered by chicks.
 
 #In order to:
 #need to filter out night images and snow images
