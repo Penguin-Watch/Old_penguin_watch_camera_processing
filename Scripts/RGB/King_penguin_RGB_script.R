@@ -253,14 +253,14 @@ ptm <- proc.time()
 SALIa2016a <- img_fun(PATH = path_SALIa2016a, MASK = mask_SALIa, WHICH = 'ALL', CORES = 2)
 proc.time() - ptm
 
-
-#SALIb2015
-path_SALIb2015 <- paste0(dir, 'Images/King_imagery/SALIb2015')
-mask_SALIb <- paste0(dir, 'Images/King_imagery/Masks/SALIb_mask.jpg')
-
-ptm <- proc.time()
-SALIb2015 <- img_fun(PATH = path_SALIb2015, MASK = mask_SALIb, WHICH = 'ALL', CORES = 2)
-proc.time() - ptm
+  
+  #SALIb2015
+  path_SALIb2015 <- paste0(dir, 'Images/King_imagery/SALIb2015')
+  mask_SALIb <- paste0(dir, 'Images/King_imagery/Masks/SALIb_mask.jpg')
+  
+  ptm <- proc.time()
+  SALIb2015 <- img_fun(PATH = path_SALIb2015, MASK = mask_SALIb, WHICH = 'ALL', CORES = 2)
+  proc.time() - ptm
 
 
 
