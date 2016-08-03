@@ -279,9 +279,13 @@ write.table(SALIb2015, "SALIb2015_RGB.csv", row.names = FALSE, sep = ",")
 
 
 
-#Masks of just penguin chicks to create 'endmember'
+#Masks of just penguin chicks
 
+setwd(paste0(dir, 'Images/King_imagery/Masks'))
 
+#processes images with chicks masks - each image should have its own corresponding
+#...chick mask. Use to build 'spectral endmember' indicative of penguin chicks. Eventually
+#...used to determine what percentage of each image is made up of chicks.
 
 
 
