@@ -19,8 +19,8 @@ pacman::p_load(jpeg, MASS, SDMTools, parallel, deldir, sp, dplyr, data.table)
 
 
 
-osx <- '/Users/caseyyoungflesh/Google Drive/R/pwatch/'
-win <- 'C:/Users/Lynch Lab 7/Google Drive/R/pwatch/'
+osx <- '/Users/caseyyoungflesh/Google_Drive/R/pwatch/'
+win <- 'C:/Users/Lynch Lab 7/Google_Drive/R/pwatch/'
 
 if(Sys.info()[['sysname']] == 'Windows')
 {
