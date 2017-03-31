@@ -108,9 +108,6 @@ setwd(paste0(dir, 'Data/Consensus_7_27_16'))
 
 
 
-#sort by adults, chicks, etc.
-unique(INPUT$name)
-
 
 # Nearest Neighbor --------------------------------------------------------
 
@@ -118,6 +115,10 @@ setwd(paste0(dir, 'Data/Consensus_7_27_16'))
 NEKO <- read.csv('NEKOczooconc.csv', header= TRUE)
 
 INPUT <- NEKO
+
+#sort by adults, chicks, etc.
+unique(INPUT$name)
+
 
 #filter for only points with above 0.5 prob of being TRUE positives
 to.rm <- which(INPUT$probability_of_true_positive < 0.5)
@@ -174,7 +175,7 @@ plot(OUT$LEN, type='l')
 
 ortho_fun <- function(IN, OBL)
 {
-  #IN <- n_NEKO
+  #IN <- f_NEKO #FROM BOTTOM!
   #OBL <- 150
   
   #remove erroneous clicks outside of defined region
@@ -204,7 +205,7 @@ ortho_fun <- function(IN, OBL)
 }
 
 #ptm <- proc.time()
-#post_ortho <- ortho_fun(n_NEKO, 150)
+#post_ortho <- ortho_fun(f_NEKO, 150)
 #proc.time() - ptm
 
 
@@ -225,7 +226,7 @@ den_fun <- function(POST_ORTHO)
   
   #kernel density estimation - calculates clicks density over continuous interval
   #bandwidth calculated using width.SJ function
-  #could maybe make dunction quicker by reducing n...
+  #could maybe make function quicker by reducing n...
   f2 <- kde2d(POST_ORTHO$x, POST_ORTHO$y, n=c(dimx, dimy),
               h= c(width.SJ(POST_ORTHO$x), width.SJ(POST_ORTHO$y)))
 
