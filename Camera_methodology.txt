@@ -1,0 +1,30 @@
+Camera methodology
+
+Automate nest detection (number of groups for k-means)
+
+	Consensus:
+	a) remove points outside of image space
+	b) run k-means, k = max number of individual user clicks
+	c) if cluster contains points from <3 users, discard those points
+	d) recalculate max number of clicks
+	e) run k-means using new click max
+	NOW HAVE CONSENSUS
+
+	Nest locations:
+	f) use consensus clicks through time to look at click density
+	g) threshold for clicks density
+	h) find center of each of these polygons - these are nest locations
+	NOW HAVE NEST LOCATIONS
+
+	Create time series:
+	a) use nest locations to create voronoi tessellation
+	b) find which consensus clicks are in voronoi 'nest polygons'
+	c) create time series for adults, chicks, eggs for each site camera
+	NOW HAVE TIME SERIES
+
+	Determine creche time:
+	a1) nearest neighbor distance OR
+	a2) determine when moving average of point distance from mean increases significantly
+
+	Build mark-recapture model:
+	a) time series of chicks for each nest
