@@ -17,7 +17,7 @@
 
 require(deldir)
 require(SDMTools)
-requrie(dplyr)
+require(dplyr)
 
 
 #CREATE FAKE NEST LOCATION DATA
