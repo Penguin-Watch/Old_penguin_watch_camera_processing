@@ -140,10 +140,8 @@ let <- str_pad(1:99, 2, pad = '0')
 #loop to plot camera image with nest 'zones', nest numbers, and consensus chick clicks
 for (i in 1:length(jpeg_files))
 {
-  i <- 1
-  
   #create jpeg
-  jpeg(filename = paste0('../Output_jpeg/pts_', jpeg_files[i]))
+  jpeg(filename = paste0('../Output_jpeg/pts_', jpeg_files[i]), width = 1000, height = 750)
   #plot jpeg camera image
   plot_jpeg(jpeg_files[i])
   #filter for consensus clicks from a single image
@@ -161,13 +159,6 @@ for (i in 1:length(jpeg_files))
   points(filt_clicks$x, filt_clicks$y, pch = 19, col = 'red', lwd = 4)
   dev.off()
 }
-points(0,0, pch = 19, col = 'red')
-
-str(filt_clicks)
-
-
-
-
 
 
 
