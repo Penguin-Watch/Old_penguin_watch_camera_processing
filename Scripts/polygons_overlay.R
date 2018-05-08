@@ -20,7 +20,6 @@
 ###Clear the working environment
 
 rm(list=ls())
-ls()
 
 ###Install the required packages.
 
@@ -31,106 +30,71 @@ ls()
 ##install.packages("jpeg", dependencies = TRUE)
 
 
-
 ### Load in the required libraries.
 
-
 require(deldir)
-
 require(SDMTools)
-
 require(dplyr)
-
 require(tidyr)
-
 library(data.table)
-
 library(jpeg)
-
+library(stringr)
 
 
 ###INPUT NEST LOCATION DATA using the rows below OR upload csv file
 
-#x <- ()
+#data <- read.csv("C:/Users/lady3793/Dropbox/Penguin_DPhil/Survival_paper/LOCKb2014/LOCKb2014_nestcoords.csv", header = TRUE, sep = ",")
+#data_user <- read.csv("C:/Users/lady3793/Dropbox/Penguin_DPhil/Survival_paper/Filtered_clusters/LOCKb_filtered2.csv", header = TRUE, sep = ",")
 
-#y <- ()
+dir <- '~/Google_Drive/R/Project_archive/Old_penguin_watch_camera_processing/Scripts/'
+#NEST COORDINATES
+nest_coords_p <- read.csv(paste0(dir, 'LOCKb2014_nestcoords.csv'))
+#CONSENSUS CLICKS
+consensus_p <- read.csv(paste0(dir, 'LOCKb2014_data_user.csv'))
+#IMAGE DIR
+path <- paste0(dir, 'LOCKb2014b_jpeg/')
 
-data <- read.csv("C:/Users/lady3793/Dropbox/Penguin_DPhil/Survival_paper/LOCKb2014/LOCKb2014_nestcoords.csv", header = TRUE, sep = ",")
-data_user <- read.csv("C:/Users/lady3793/Dropbox/Penguin_DPhil/Survival_paper/Filtered_clusters/LOCKb_filtered2.csv", header = TRUE, sep = ",")
+#transform y coordinates as image origin is top left, rather than bottom left
+nest_coords <- data.frame(x = nest_coords_p$x, 
+                          y = 750 - nest_coords_p$y)
+consensus <- data.frame(name = consensus_p$name, 
+                        x = consensus_p$x, 
+                        y = 750 - consensus_p$y)
 
-newdata<- 750-data$y
-
-data <- data.frame(x=data$x, y=newdata)
-
-blob<- 750-data_user$y
-
-data2 <- data.frame(name= data_user$name, x=data_user$x, y=blob)
 
 #Tests each click location to determine which nest it is located in
 
 #function to tesselate
-
 #INPUT IS MATRIX WITH TWO COLUMNS (col 1 is x coordinates, col 2 is y coordinates of nests)
 
-
-
 poly_fun <- function(KM_REV_ORTHO)
-  
 {
-  
-  
-  
   #KM_REV_ORTHO <- km_rev_ortho
-  
-  
-  
   width <- 1000
-  
   height <- 750
   
-  
-  
   #Voronoi tesselation using specified nest sites - deldir makes tesselation
-  
   vt <- suppressWarnings(deldir(KM_REV_ORTHO[,1], KM_REV_ORTHO[,2], 
-                                
                                 rw= c(0, width, 0, height)))
-  
-  
   
   w <- tile.list(vt) #polygon coordinates
   
-  
-  
   polys <- vector(mode= 'list', length= length(w))
-  
   for (i in seq(along= polys))
-    
   {
-    
     pcrds <- cbind(w[[i]]$x, w[[i]]$y)
-    
     pcrds <- rbind(pcrds, pcrds[1,])
-    
     polys[[i]] <- pcrds #arrange polygon coordinates
-    
   }
-  
-  
-  
   return(polys)
-  
 }
 
+#determine polygons from nest coordinates
+polys <- poly_fun(nest_coords)
 
-#determine polygons
-polys <- poly_fun(data)
-
-path <- "//zoo-booty/home$/lady3793/My Documents/LOCKb2014/zooniverse_images/LOCKb2014b"
-
+#change wd to dir with jpg images
 setwd(path) 
-
-jpeg_files<- list.files()
+jpeg_files <- list.files()
 
 #ggplot colors function
 gg_color_hue <- function(n, OUT = 'HEX')
@@ -166,40 +130,53 @@ plot_jpeg = function(path, add=FALSE)
   par(mar= c(5, 4, 4, 2))
 }
 
-
-#determine colors to use
-cols <- gg_color_hue(NROW(data))
+#determine colors to use (as many as there are nests)
+cols <- gg_color_hue(NROW(nest_coords))
 
 #vector of numbers to plot for nests
 let <- str_pad(1:99, 2, pad = '0')
 
-
-i = 
-  
+#set dir to out location for jpeg files
 #loop to plot camera image with nest 'zones', nest numbers, and consensus chick clicks
 for (i in 1:length(jpeg_files))
 {
+  i <- 1
+  
+  #create jpeg
+  jpeg(filename = paste0('../Output_jpeg/pts_', jpeg_files[i]))
   #plot jpeg camera image
   plot_jpeg(jpeg_files[i])
   #filter for consensus clicks from a single image
-  filt_clicks <- filter(data2, name == jpeg_files[i])
+  jpg_name <- strsplit(jpeg_files[i], split = '.', fixed = TRUE)[[1]][1]
+  
+  filt_clicks <- filter(consensus, name == jpg_name)
   for (j in 1:length(polys))
   {
     #plot polygons
     lines(polys[[j]], lwd = 5)
     #nests numbers on plot
-    text(data$x[j], data$y[j], labels = let[j], col = cols[j], lwd = 12)
+    text(nest_coords$x[j], nest_coords$y[j], labels = let[j], col = cols[j], lwd = 12)
   }
   #consensus clicks
-  points(filt_clicks, pch = 19, col = 'red', lwd = 4)
+  points(filt_clicks$x, filt_clicks$y, pch = 19, col = 'red', lwd = 4)
+  dev.off()
 }
+points(0,0, pch = 19, col = 'red')
+
+str(filt_clicks)
+
+
+
+
+
+
+
 
 
 
 #PLOT DATA
 
 plot(data, pch = 19)
-
 
 
 #PLOT POLYGONS FROM TESSELATION
